@@ -91,7 +91,7 @@ echo "[ci:install] rust deps"
 (cd core && cargo fetch)
 
 echo "[ci:frontend] install (frozen lockfile)"
-pnpm install --frozen-lockfile --filter @sf-voice/frontend...
+(cd core/frontend && pnpm install --frozen-lockfile)
 
 echo "[ci:format] format"
 mise run format:fix
@@ -109,10 +109,10 @@ echo "[ci:rust] test"
 (cd core && cargo test --bin sf-voice-api)
 
 echo "[ci:frontend] typecheck"
-pnpm --filter @sf-voice/frontend typecheck
+(cd core/frontend && pnpm typecheck)
 
 echo "[ci:frontend] build"
-pnpm --filter @sf-voice/frontend build
+(cd core/frontend && pnpm build)
 
 echo "[ci:sdk] running sdk checks"
 mise run ci:sdk
@@ -221,12 +221,12 @@ run = "mix workspace.run -t format"
 
 [tasks."format:backend"]
 description = "format: core backend rust crates"
-dir = "core"
+dir = "rust"
 run = "cargo fmt -p sf-voice-api -p entities -p migration"
 
 [tasks."format:rust"]
 description = "format: all rust crates"
-dir = "core"
+dir = "rust"
 run = "cargo fmt --all"
 
 [tasks."format:frontend"]

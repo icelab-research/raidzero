@@ -54,7 +54,7 @@
          },
          {
             "group": "Platform",
-            "pages": ["data-privacy"]
+            "pages": ["api-tokens", "data-privacy"]
          },
          {
             "group": "SDKs",

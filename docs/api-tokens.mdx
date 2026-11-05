@@ -1,0 +1,87 @@
+---
+title: "API tokens"
+description: "Create, copy, and revoke API tokens in the dashboard. Tokens authenticate every SDK and REST request and are scoped to a single org."
+---
+
+API tokens authenticate every request to `/api/v1/*` — the same endpoints the SDKs call under the hood. Each token is scoped to a single org, so you can issue separate tokens for production, staging, CI, or a teammate without giving up org-wide control.
+
+## When to create a token
+
+Create a token any time you need to:
+
+- Run the [quickstart](/quickstart) or any of the [SDKs](/sdks/overview) from a new environment.
+- Wire ingestion into a backend service, worker, or CI job.
+- Hand a scoped credential to a teammate or third-party tool.
+
+You can create as many tokens as you want and revoke any of them without affecting the others.
+
+## Create your first token
+
+The first time you sign in to an org that has no tokens and no ingested media, the dashboard opens a **Welcome** modal that walks you through three steps:
+
+<Steps>
+  <Step title="Create token">
+    Click **Create token**. A token labeled `default` is minted and revealed in the modal.
+  </Step>
+  <Step title="Install the SDK">
+    Copy the `pnpm add @sf-voice/media` snippet and run it in your project.
+  </Step>
+  <Step title="Ingest your first call">
+    Copy the starter snippet, paste your token into `SF_VOICE_TOKEN`, and run it.
+  </Step>
+</Steps>
+
+<Warning>
+  The full token is shown **only once**. Copy it into a password manager or your secrets store before closing the modal — you cannot retrieve it later.
+</Warning>
+
+The onboarding modal stops appearing as soon as any active token exists on the org.
+
+## Manage tokens from settings
+
+Open **Settings → API tokens** to create more tokens or revoke existing ones at any time.
+
+### Create a token
+
+1. Enter a descriptive label (for example, `production`, `ci`, or `analytics-worker`).
+2. Click **Create token**.
+3. Copy the full token from the reveal modal and store it securely. Click **I've saved it** to dismiss the modal.
+
+After dismissal, the dashboard only shows the token prefix (for example, `sk_live_a1b2c3d4…`), the creation date, and the last-used date.
+
+### Revoke a token
+
+Click **Revoke** next to any token to invalidate it immediately. In-flight requests using that token start returning `unauthorized` right away. Revoking is permanent — create a new token if you need to rotate.
+
+### Expired tokens
+
+Tokens with a past expiration date are marked **Expired** and stop authenticating requests. They remain in the list for audit until you revoke them.
+
+## Use a token
+
+Set the token as an environment variable and pass it to the SDK client. Never commit tokens to source control.
+
+```ts
+import { SfVoiceMedia } from "@sf-voice/media";
+
+const client = new SfVoiceMedia({
+  baseUrl: "https://api.sf-voice.com",
+  apiKey: process.env.SF_VOICE_API_KEY!,
+});
+```
+
+If you call the REST API directly, send the token in the `X-API-Key` header:
+
+```sh
+curl https://api.sf-voice.com/api/v1/assets \
+  -H "X-API-Key: $SF_VOICE_API_KEY"
+```
+
+An invalid or revoked token returns the `unauthorized` error code. See the [SDK overview](/sdks/overview) for the full error table.
+
+## Best practices
+
+- **One token per environment.** Separate production from staging and CI so you can rotate one without breaking the others.
+- **Label tokens clearly.** Labels are the only way to tell tokens apart once the prefix is all that's visible.
+- **Rotate on personnel changes.** Revoke and re-issue tokens when a teammate leaves or a machine is decommissioned.
+- **Store in a secrets manager.** Treat tokens like passwords — never log them, commit them, or paste them into shared chat.

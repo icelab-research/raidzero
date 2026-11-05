@@ -5,6 +5,16 @@ description: "Install the TypeScript SDK, ingest a video or audio asset, wait fo
 
 Install the TypeScript SDK, ingest one recording, wait for it to index, and run a search.
 
+## Get an API token
+
+Sign in to the dashboard and open **Settings → API tokens** to create one. New orgs see a one-click onboarding modal that mints a token labeled `default`. The full token is shown once — copy it into a password manager or secrets store before closing the dialog. See [API tokens](/api-tokens) for revocation and best practices.
+
+Export the token where the SDK can read it:
+
+```sh
+export SF_VOICE_API_KEY="sk_live_…"
+```
+
 ## Install
 
 <CodeGroup>
