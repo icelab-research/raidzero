@@ -11,6 +11,7 @@ over OTLP/HTTP JSON to SigNoz. Slack alerting is **SigNoz config** (alert rule +
 Slack channel), not SDK code.
 
 **Why:**
+
 - Separate module keeps any observability concerns out of the media client's
   `go.mod` (the user chose "separate module").
 - Stdlib-only (hand-rolled OTLP JSON + Pyroscope multipart push) keeps the build
@@ -20,6 +21,7 @@ Slack channel), not SDK code.
   *where* the CPU went.
 
 **What was rejected:**
+
 - OTel Go SDK for metrics — would add third-party deps; hand-rolled OTLP JSON
   avoids them and the OTLP/HTTP receiver accepts `application/json`.
 - Metrics-only and local-Slack-webhook approaches — user chose continuous
@@ -41,3 +43,15 @@ subdirectory tag now describe the same source.
 
 **What was rejected:** Keeping the unavailable module path in anticipation of a
 future repository or vanity import.
+
+## [2026-11-05] — Normalize CPU utilization to process capacity
+
+**What was decided:** `process.cpu.utilization` divides process CPU time by the
+smallest available limit from `runtime.NumCPU`, `GOMAXPROCS`, and Linux cgroup
+CPU quota. Linux supports cgroup v2 and common cgroup v1 layouts.
+
+**Why:** A process saturating a one-CPU container must report full utilization
+even when its host has many CPUs, otherwise high-CPU alerts can be missed.
+
+**What was rejected:** Normalizing only by host-visible CPUs and documenting a
+different host-relative metric.
