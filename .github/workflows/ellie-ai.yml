@@ -47,7 +47,7 @@ jobs:
               otp-version: ${{ env.OTP_VERSION }}
 
          - name: install build tools
-           run: sudo apt-get update && sudo apt-get install -y build-essential
+           run: sudo apt-get update && sudo apt-get install -y build-essential mold clang
 
          - name: cache deps
            uses: actions/cache@v4
@@ -100,8 +100,8 @@ jobs:
               context: ${{ env.APP_DIR }}
               push: true
               tags: |
-                 ghcr.io/sf-voice/ellie-ai:latest
-                 ghcr.io/sf-voice/ellie-ai:sha-${{ github.sha }}
+                 ghcr.io/${{ github.repository }}/ellie-ai:latest
+                 ghcr.io/${{ github.repository }}/ellie-ai:sha-${{ github.sha }}
               labels: |
                  org.opencontainers.image.revision=${{ github.sha }}
                  org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}

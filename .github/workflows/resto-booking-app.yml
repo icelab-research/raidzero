@@ -96,8 +96,8 @@ jobs:
           context: ${{ env.APP_DIR }}
           push: true
           tags: |
-            ghcr.io/sf-voice/restaurant-booking-app:latest
-            ghcr.io/sf-voice/restaurant-booking-app:sha-${{ github.sha }}
+            ghcr.io/${{ github.repository }}/restaurant-booking-app:latest
+            ghcr.io/${{ github.repository }}/restaurant-booking-app:sha-${{ github.sha }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}

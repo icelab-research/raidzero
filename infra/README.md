@@ -60,8 +60,8 @@ present here.
 
 ## runtime services
 
-| service      | image                                     | data                   | public host              |
-| ------------ | ----------------------------------------- | ---------------------- | ------------------------ |
-| `caddy`      | `caddy:2-alpine`                          | caddy volumes + certs  | public `80/443`          |
-| `ellie-ai`   | `ghcr.io/sf-voice/ellie-ai`               | sqlite in `data/ellie` | `ellie-ai.sf-voice.sh`   |
-| `resto-demo` | `ghcr.io/sf-voice/restaurant-booking-app` | sqlite in `data/resto` | `resto-demo.sf-voice.sh` |
+| service      | image                                                        | data                   | public host              |
+| ------------ | ------------------------------------------------------------ | ---------------------- | ------------------------ |
+| `caddy`      | `caddy:2-alpine`                                             | caddy volumes + certs  | public `80/443`          |
+| `ellie-ai`   | `ghcr.io/icelab-research/raidzero/ellie-ai`               | sqlite in `data/ellie` | `ellie-ai.sf-voice.sh`   |
+| `resto-demo` | `ghcr.io/icelab-research/raidzero/restaurant-booking-app` | sqlite in `data/resto` | `resto-demo.sf-voice.sh` |
