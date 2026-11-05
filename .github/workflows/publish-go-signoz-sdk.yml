@@ -1,0 +1,95 @@
+name: publish go-signoz sdk
+
+on:
+   push:
+      tags:
+         - "go-signoz/v*"
+   workflow_dispatch:
+      inputs:
+         version:
+            description: "Version matching the selected go-signoz/vX.Y.Z tag"
+            required: true
+
+
+concurrency:
+   group: publish-go-signoz-sdk-${{ github.ref }}
+   cancel-in-progress: false
+
+permissions:
+   contents: read
+
+jobs:
+   verify:
+      name: verify go module tag
+      runs-on: ubuntu-latest
+      steps:
+         - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+           with:
+              persist-credentials: false
+
+         - name: resolve version
+           env:
+              EVENT_NAME: ${{ github.event_name }}
+              INPUT_VERSION: ${{ inputs.version }}
+              REF_NAME: ${{ github.ref_name }}
+              REF_TYPE: ${{ github.ref_type }}
+           run: |
+              set -euo pipefail
+              if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+                version="$INPUT_VERSION"
+              else
+                version="${REF_NAME#go-signoz/v}"
+              fi
+              if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+                echo "::error::version must be a semantic version without a v prefix"
+                exit 1
+              fi
+              major_version="${version%%.*}"
+              if [ "$major_version" -gt 1 ]; then
+                echo "::error::versions above v1 require a /vN module path"
+                exit 1
+              fi
+              if [ "$REF_TYPE" != "tag" ] || [ "$REF_NAME" != "go-signoz/v${version}" ]; then
+                echo "::error::run this workflow from tag go-signoz/v${version}"
+                exit 1
+              fi
+              printf 'VERSION=%s\n' "$version" >> "$GITHUB_ENV"
+
+         - name: setup go
+           uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+           with:
+              go-version: "1.21"
+              cache: false
+
+         - name: check formatting
+           working-directory: go-signoz
+           run: |
+              unformatted="$(gofmt -l .)"
+              if [ -n "$unformatted" ]; then
+                echo "::error::gofmt needed on:"; echo "$unformatted"; exit 1
+              fi
+
+         - name: vet
+           working-directory: go-signoz
+           run: go vet ./...
+
+         - name: build
+           working-directory: go-signoz
+           run: go build ./...
+
+         - name: test
+           working-directory: go-signoz
+           run: go test -race ./...
+
+         - name: request proxy index
+           continue-on-error: true
+           run: |
+              # go modules are "published" by the path-prefixed git tag
+              # (go-signoz/vX.Y.Z) — no registry upload. This asks the public
+              # proxy to fetch and index the version so that
+              #   go get github.com/icelab-research/raidzero/go-signoz@vVERSION
+              # resolves. Best-effort (continue-on-error): it only succeeds once
+              # the tag is visible to the proxy. see go-signoz/README.md "Releasing".
+              GOPROXY=https://proxy.golang.org go list -m \
+                "github.com/icelab-research/raidzero/go-signoz@v${VERSION}" \
+                || echo "::warning::proxy index pending — see go-signoz/README.md (Releasing)"
