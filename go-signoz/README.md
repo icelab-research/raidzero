@@ -52,21 +52,26 @@ A runnable demo (burns a core so the metric climbs) lives in `./example`.
 
 ## Metrics emitted
 
-- `process.cpu.utilization` becomes `process_cpu_utilization` in SigNoz. It is
-  a `[0,1]` gauge where `1.0` means every core is saturated. Its calculation is
-  `ΔCPU / (Δwall · nCPU)`.
-- `process.runtime.go.goroutines` becomes
-  `process_runtime_go_goroutines` in SigNoz. It reports the live goroutine
-  count as a gauge.
+- `process.cpu.utilization` is a `[0,1]` gauge where `1.0` means the process has
+  saturated its available CPU capacity. Its calculation is
+  `ΔCPU / (Δwall · available CPUs)`.
+- `process.runtime.go.goroutines` reports the live goroutine count as a gauge.
+
+Current SigNoz deployments keep these dotted metric names. Older deployments
+may normalize them to `process_cpu_utilization` and
+`process_runtime_go_goroutines`.
 
 ## Wiring "high CPU → Slack" in SigNoz (config, not code)
 
 1. **Point metrics at SigNoz.** Self-host: `MetricsEndpoint=http://<collector>:4318`.
    Cloud: the regional ingest URL + `signoz-ingestion-key` header (shown above).
-2. **Confirm the metric.** SigNoz → *Metrics* and search `process_cpu_utilization`.
+2. **Confirm the metric.** SigNoz → *Metrics* and search
+   `process.cpu.utilization`. On an older deployment, search
+   `process_cpu_utilization` instead.
 3. **Create the alert.** *Alerts → New Alert → Metrics-based*:
-   - Metric `process_cpu_utilization`, aggregation **avg** (or `p95`), grouped
-     by `host_name`.
+   - Metric `process.cpu.utilization`, aggregation **avg**, grouped by
+     `host.name`. Older deployments may use `process_cpu_utilization` and
+     `host_name`.
    - Condition: **above `0.85` for 5m** (utilization is `0–1`, so `0.85` = 85%).
 4. **Add a Slack channel.** *Settings → Alert Channels → New → Slack*, paste an
    [incoming webhook](https://api.slack.com/messaging/webhooks) URL, pick the channel.

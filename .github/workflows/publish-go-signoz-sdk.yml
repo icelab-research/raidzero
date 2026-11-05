@@ -44,6 +44,11 @@ jobs:
                 echo "::error::version must be a semantic version without a v prefix"
                 exit 1
               fi
+              major_version="${version%%.*}"
+              if [ "$major_version" -gt 1 ]; then
+                echo "::error::versions above v1 require a /vN module path"
+                exit 1
+              fi
               if [ "$REF_TYPE" != "tag" ] || [ "$REF_NAME" != "go-signoz/v${version}" ]; then
                 echo "::error::run this workflow from tag go-signoz/v${version}"
                 exit 1

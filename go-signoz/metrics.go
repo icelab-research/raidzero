@@ -33,7 +33,7 @@ func newCPUSampler() (*cpuSampler, error) {
 	return &cpuSampler{
 		lastCPU:  cpu,
 		lastWall: time.Now(),
-		numCPU:   float64(runtime.NumCPU()),
+		numCPU:   availableCPUCapacity(),
 	}, nil
 }
 

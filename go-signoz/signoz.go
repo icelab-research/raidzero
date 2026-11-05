@@ -38,6 +38,7 @@ import (
 	"maps"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 )
@@ -180,7 +181,7 @@ func validateEndpoint(name, rawURL string) error {
 	if (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.Host == "" {
 		return fmt.Errorf("signoz: %s must be an absolute http or https URL", name)
 	}
-	if parsedURL.RawQuery != "" || parsedURL.Fragment != "" {
+	if strings.ContainsAny(rawURL, "?#") {
 		return fmt.Errorf("signoz: %s must not contain a query or fragment", name)
 	}
 	return nil

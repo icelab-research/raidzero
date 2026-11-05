@@ -29,6 +29,26 @@ func TestUtilizationClampAndRatio(t *testing.T) {
 	}
 }
 
+// verifies cgroup parsing and process-capacity bounds.
+func TestCPUCapacity(t *testing.T) {
+	quota, ok := parseCPUMax("50000 100000")
+	if !ok || quota != 0.5 {
+		t.Fatalf("parseCPUMax = %v, %v; want 0.5, true", quota, ok)
+	}
+	if _, ok := parseCPUMax("max 100000"); ok {
+		t.Fatal("unlimited cpu.max should not produce a quota")
+	}
+	if _, ok := parseCPUQuota("-1", "100000"); ok {
+		t.Fatal("unlimited cgroup v1 quota should not produce a limit")
+	}
+	if got := normalizedCPUCapacity(8, 4, 1.5, true); got != 1.5 {
+		t.Fatalf("normalizedCPUCapacity = %v, want 1.5", got)
+	}
+	if got := normalizedCPUCapacity(8, 4, 0, false); got != 4 {
+		t.Fatalf("normalizedCPUCapacity = %v, want 4", got)
+	}
+}
+
 // verifies that labels are encoded in a stable order.
 func TestPyroscopeNameEncoding(t *testing.T) {
 	a := &Agent{cfg: Config{ServiceName: "svc", Labels: map[string]string{"env": "prod", "az": "a"}}}
@@ -90,6 +110,8 @@ func TestStartRejectsInvalidEndpoints(t *testing.T) {
 		{name: "missing host", endpoint: "https:///metrics"},
 		{name: "query", endpoint: "https://collector.example.com?token=value"},
 		{name: "fragment", endpoint: "https://collector.example.com#metrics"},
+		{name: "empty query", endpoint: "https://collector.example.com?"},
+		{name: "empty fragment", endpoint: "https://collector.example.com#"},
 	}
 
 	for _, testCase := range testCases {
