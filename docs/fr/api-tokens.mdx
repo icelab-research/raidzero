@@ -1,0 +1,87 @@
+---
+title: "Jetons d'API"
+description: "Créez, copiez et révoquez des jetons d'API depuis le tableau de bord. Les jetons authentifient chaque appel SDK et REST et sont limités à une seule organisation."
+---
+
+Les jetons d'API authentifient chaque requête vers `/api/v1/*` — les mêmes endpoints que les SDKs appellent en interne. Chaque jeton est limité à une seule organisation : vous pouvez donc émettre des jetons distincts pour la production, le staging, la CI ou un coéquipier sans perdre le contrôle global.
+
+## Quand créer un jeton
+
+Créez un jeton dès que vous devez :
+
+- Lancer le [démarrage rapide](/quickstart) ou l'un des [SDKs](/sdks/overview) depuis un nouvel environnement.
+- Brancher l'ingestion sur un service backend, un worker ou une tâche CI.
+- Fournir une identifiant cadré à un coéquipier ou à un outil tiers.
+
+Vous pouvez créer autant de jetons que nécessaire et en révoquer un sans toucher aux autres.
+
+## Créer votre premier jeton
+
+À votre première connexion sur une organisation sans aucun jeton ni média ingéré, le tableau de bord ouvre une fenêtre **Bienvenue** en trois étapes :
+
+<Steps>
+  <Step title="Créer un jeton">
+    Cliquez sur **Créer un jeton**. Un jeton intitulé `default` est généré et révélé dans la fenêtre.
+  </Step>
+  <Step title="Installer le SDK">
+    Copiez la commande `pnpm add @sf-voice/media` et exécutez-la dans votre projet.
+  </Step>
+  <Step title="Ingérer votre premier appel">
+    Copiez l'extrait de démarrage, collez votre jeton dans `SF_VOICE_TOKEN` et exécutez-le.
+  </Step>
+</Steps>
+
+<Warning>
+  Le jeton complet ne s'affiche **qu'une seule fois**. Copiez-le dans un gestionnaire de mots de passe ou votre coffre de secrets avant de fermer la fenêtre — il sera impossible de le récupérer ensuite.
+</Warning>
+
+La fenêtre d'onboarding disparaît dès qu'un jeton actif existe sur l'organisation.
+
+## Gérer les jetons depuis Paramètres
+
+Ouvrez **Paramètres → Jetons d'API** pour créer d'autres jetons ou révoquer les jetons existants à tout moment.
+
+### Créer un jeton
+
+1. Saisissez une étiquette descriptive (par exemple `production`, `ci` ou `analytics-worker`).
+2. Cliquez sur **Créer un jeton**.
+3. Copiez le jeton complet depuis la fenêtre et stockez-le en sécurité. Cliquez sur **Je l'ai sauvegardé** pour la fermer.
+
+Une fois fermée, le tableau de bord n'affiche plus que le préfixe du jeton (par exemple `sk_live_a1b2c3d4…`), la date de création et la date de dernière utilisation.
+
+### Révoquer un jeton
+
+Cliquez sur **Révoquer** à côté d'un jeton pour l'invalider immédiatement. Les requêtes en cours utilisant ce jeton renvoient aussitôt `unauthorized`. La révocation est définitive — créez un nouveau jeton pour effectuer une rotation.
+
+### Jetons expirés
+
+Les jetons dont la date d'expiration est passée sont marqués **Expiré** et cessent d'authentifier les requêtes. Ils restent dans la liste pour audit jusqu'à ce que vous les révoquiez.
+
+## Utiliser un jeton
+
+Définissez le jeton dans une variable d'environnement et passez-la au client SDK. Ne committez jamais de jetons.
+
+```ts
+import { SfVoiceMedia } from "@sf-voice/media";
+
+const client = new SfVoiceMedia({
+  baseUrl: "https://api.sf-voice.com",
+  apiKey: process.env.SF_VOICE_API_KEY!,
+});
+```
+
+Si vous appelez l'API REST directement, envoyez le jeton dans l'en-tête `X-API-Key` :
+
+```sh
+curl https://api.sf-voice.com/api/v1/assets \
+  -H "X-API-Key: $SF_VOICE_API_KEY"
+```
+
+Un jeton invalide ou révoqué renvoie le code d'erreur `unauthorized`. Voir l'[aperçu du SDK](/sdks/overview) pour la table complète des erreurs.
+
+## Bonnes pratiques
+
+- **Un jeton par environnement.** Séparez la production du staging et de la CI pour pouvoir en faire tourner un sans casser les autres.
+- **Étiquetez clairement les jetons.** Les étiquettes sont le seul moyen de les distinguer une fois que seul le préfixe est visible.
+- **Renouvelez lors de changements d'équipe.** Révoquez et réémettez les jetons quand un coéquipier part ou qu'une machine est mise hors service.
+- **Stockez-les dans un gestionnaire de secrets.** Traitez-les comme des mots de passe — ne les journalisez jamais, ne les committez jamais et ne les collez jamais dans un chat partagé.

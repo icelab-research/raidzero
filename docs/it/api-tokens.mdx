@@ -1,0 +1,87 @@
+---
+title: "Token API"
+description: "Crea, copia e revoca i token API dal pannello. I token autenticano ogni richiesta SDK e REST e sono vincolati a una singola organizzazione."
+---
+
+I token API autenticano ogni richiesta verso `/api/v1/*` — gli stessi endpoint che gli SDK chiamano internamente. Ogni token è vincolato a una sola organizzazione, così puoi emettere token separati per produzione, staging, CI o un collega senza perdere il controllo generale.
+
+## Quando creare un token
+
+Crea un token ogni volta che ti serve:
+
+- Eseguire l'[avvio rapido](/quickstart) o uno qualsiasi degli [SDK](/sdks/overview) da un nuovo ambiente.
+- Collegare l'ingestione a un servizio backend, a un worker o a un job di CI.
+- Consegnare una credenziale circoscritta a un collega o a uno strumento di terze parti.
+
+Puoi creare quanti token vuoi e revocarne uno senza toccare gli altri.
+
+## Crea il tuo primo token
+
+La prima volta che accedi a un'organizzazione senza token e senza media ingeriti, il pannello apre una finestra di **Benvenuto** in tre passaggi:
+
+<Steps>
+  <Step title="Crea il token">
+    Fai clic su **Crea token**. Viene generato un token con etichetta `default` e mostrato nella finestra.
+  </Step>
+  <Step title="Installa l'SDK">
+    Copia il comando `pnpm add @sf-voice/media` ed eseguilo nel tuo progetto.
+  </Step>
+  <Step title="Ingerisci la tua prima chiamata">
+    Copia lo snippet iniziale, incolla il token in `SF_VOICE_TOKEN` ed eseguilo.
+  </Step>
+</Steps>
+
+<Warning>
+  Il token completo viene mostrato **una sola volta**. Copialo in un gestore di password o nel tuo secret store prima di chiudere la finestra — non potrai recuperarlo in seguito.
+</Warning>
+
+La finestra di onboarding smette di apparire non appena esiste un token attivo sull'organizzazione.
+
+## Gestisci i token dalle impostazioni
+
+Apri **Impostazioni → Token API** per creare altri token o revocare quelli esistenti in qualsiasi momento.
+
+### Creare un token
+
+1. Inserisci un'etichetta descrittiva (ad esempio `production`, `ci` o `analytics-worker`).
+2. Fai clic su **Crea token**.
+3. Copia il token completo dalla finestra e conservalo in modo sicuro. Fai clic su **L'ho salvato** per chiuderla.
+
+Una volta chiusa, il pannello mostra solo il prefisso del token (ad esempio `sk_live_a1b2c3d4…`), la data di creazione e la data dell'ultimo utilizzo.
+
+### Revocare un token
+
+Fai clic su **Revoca** accanto a un token per invalidarlo immediatamente. Le richieste in corso che usano quel token iniziano a restituire `unauthorized` all'istante. La revoca è definitiva — crea un nuovo token se devi ruotarlo.
+
+### Token scaduti
+
+I token con data di scadenza passata sono contrassegnati come **Scaduti** e smettono di autenticare le richieste. Restano nella lista a scopo di audit finché non li revochi.
+
+## Usare un token
+
+Imposta il token come variabile d'ambiente e passalo al client dell'SDK. Non committare mai i token nel controllo versione.
+
+```ts
+import { SfVoiceMedia } from "@sf-voice/media";
+
+const client = new SfVoiceMedia({
+  baseUrl: "https://api.sf-voice.com",
+  apiKey: process.env.SF_VOICE_API_KEY!,
+});
+```
+
+Se chiami direttamente l'API REST, invia il token nell'header `X-API-Key`:
+
+```sh
+curl https://api.sf-voice.com/api/v1/assets \
+  -H "X-API-Key: $SF_VOICE_API_KEY"
+```
+
+Un token non valido o revocato restituisce il codice di errore `unauthorized`. Consulta la [panoramica degli SDK](/sdks/overview) per la tabella completa degli errori.
+
+## Buone pratiche
+
+- **Un token per ambiente.** Tieni separati produzione, staging e CI per poterne ruotare uno senza rompere gli altri.
+- **Etichetta i token con chiarezza.** Le etichette sono l'unico modo per distinguerli quando rimane visibile solo il prefisso.
+- **Ruota i token al cambio di personale.** Revoca e riemetti i token quando un collega lascia il team o una macchina viene dismessa.
+- **Conservali in un secret manager.** Trattali come password — non loggarli, non committarli e non incollarli in chat condivise.
