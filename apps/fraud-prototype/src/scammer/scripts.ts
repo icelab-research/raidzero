@@ -13,6 +13,8 @@ const scripts = {
 
 export type ScriptId = keyof typeof scripts;
 
+export const STOP_TEST = "STOP TEST";
+
 export function ids(): ScriptId[] {
    return Object.keys(scripts) as ScriptId[];
 }
