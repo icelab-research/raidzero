@@ -3,11 +3,15 @@ title: "SDK Overview"
 description: "Compare our official media SDKs for TypeScript, Go, Rust, Java, Kotlin, Elixir, and C++, and find the package for your stack."
 ---
 
-The SDKs are open source at [github.com/sf-voice/sf-voice-core](https://github.com/sf-voice/sf-voice-core).
+The SDKs are open source at [github.com/icelab-research/raidzero](https://github.com/icelab-research/raidzero).
 
-These docs cover SDK version `0.1.1`. We are iterating quickly, so pin your SDK version and expect breaking changes between versions until the API settles.
+Package versions are listed on each language page. TypeScript is at `0.1.2`;
+the other published manifests remain at `0.1.1`. Pin the version you install.
 
-The SDKs cover the core operations: `ingest`, `getTask`, `pollTask`, `listAssets`, `getAsset`, `deleteAsset`, `search`. Method names follow the naming convention of each language.
+The SDKs cover ingest, tasks, assets, search, prefixes, monitor CRUD, paginated
+monitor events, and high-level alerts. Method names follow each language's
+naming convention. See [Observability and alerts](/sdks/observability) for the
+polling and cleanup contract.
 
 <CardGroup cols={2}>
   <Card title="TypeScript" icon="square-js" href="/sdks/typescript">
@@ -31,6 +35,10 @@ The SDKs cover the core operations: `ingest`, `getTask`, `pollTask`, `listAssets
 </CardGroup>
 
 Building in C++? There's no published package — see the [C++ example](/sdks/cpp) for a single-header helper you can copy into your project.
+
+Profiling a Go service? The
+[go-signoz helper](https://github.com/icelab-research/raidzero/tree/main/go-signoz)
+exports process CPU capacity for SigNoz alerting.
 
 ## Authentication
 

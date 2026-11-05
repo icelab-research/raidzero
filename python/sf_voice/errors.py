@@ -18,7 +18,9 @@ class SfVoiceMediaError(Exception):
         self.status = status
 
     @classmethod
-    def from_response(cls, status: int, body: Optional[Dict[str, Any]]) -> "SfVoiceMediaError":
+    def from_response(
+        cls, status: int, body: Optional[Dict[str, Any]]
+    ) -> "SfVoiceMediaError":
         """build an sdk error from the standard api error envelope."""
         if isinstance(body, dict) and isinstance(body.get("error"), dict):
             error = body["error"]
@@ -59,3 +61,7 @@ class SfVoiceMediaPollTimeoutError(TimeoutError):
         super().__init__(f"task {task_id} did not complete within {timeout_ms}ms")
         self.task_id = task_id
         self.timeout_ms = timeout_ms
+
+
+class SfVoiceMediaAlertCallbackError(RuntimeError):
+    """raised when an alert callback fails."""

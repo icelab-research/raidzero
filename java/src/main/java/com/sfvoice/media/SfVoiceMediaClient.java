@@ -6,10 +6,18 @@ import com.sfvoice.media.models.*;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * blocking HTTP client for the sf-voice media API.
@@ -51,15 +59,19 @@ public class SfVoiceMediaClient {
      * Create an HttpRequest.Builder targeting the client's API path with standard headers and timeout.
      *
      * @param path the request path appended to the client's baseUrl (baseUrl has no trailing slash); should start with a leading '/'
-     * @return an HttpRequest.Builder whose URI is baseUrl + path, with the `X-API-Key` and `Content-Type: application/json` headers set and a 30-second request timeout
+     * @return an HttpRequest.Builder whose URI is baseUrl + path, with bearer authentication and a JSON content type set and a 30-second request timeout
      */
 
     private HttpRequest.Builder baseRequest(String path) {
         return HttpRequest.newBuilder()
             .uri(URI.create(baseUrl + path))
-            .header("X-API-Key", apiKey)
+            .header("Authorization", "Bearer " + apiKey)
             .header("Content-Type", "application/json")
             .timeout(Duration.ofSeconds(30));
+    }
+
+    private static String pathSegment(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
     /**
@@ -78,7 +90,7 @@ public class SfVoiceMediaClient {
 
         HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
 
-        if (response.statusCode() == 204) {
+        if (response.statusCode() == 204 || responseType == Void.class) {
             return null;
         }
 
@@ -128,7 +140,7 @@ public class SfVoiceMediaClient {
     public IngestResponse ingest(IngestRequest request)
             throws SfVoiceMediaException, IOException, InterruptedException {
 
-        HttpRequest req = baseRequest("/v1/ingest")
+        HttpRequest req = baseRequest("/api/v1/ingest")
             .POST(HttpRequest.BodyPublishers.ofString(toJson(request)))
             .build();
         return execute(req, IngestResponse.class);
@@ -146,7 +158,7 @@ public class SfVoiceMediaClient {
     public Task getTask(String taskId)
             throws SfVoiceMediaException, IOException, InterruptedException {
 
-        HttpRequest req = baseRequest("/v1/tasks/" + taskId)
+        HttpRequest req = baseRequest("/api/v1/tasks/" + pathSegment(taskId))
             .GET()
             .build();
         return execute(req, Task.class);
@@ -165,7 +177,7 @@ public class SfVoiceMediaClient {
     public AssetListResponse listAssets(int page, int limit)
             throws SfVoiceMediaException, IOException, InterruptedException {
 
-        HttpRequest req = baseRequest("/v1/assets?page=" + page + "&limit=" + limit)
+        HttpRequest req = baseRequest("/api/v1/assets?page=" + page + "&limit=" + limit)
             .GET()
             .build();
         return execute(req, AssetListResponse.class);
@@ -196,7 +208,7 @@ public class SfVoiceMediaClient {
     public Asset getAsset(String assetId)
             throws SfVoiceMediaException, IOException, InterruptedException {
 
-        HttpRequest req = baseRequest("/v1/assets/" + assetId)
+        HttpRequest req = baseRequest("/api/v1/assets/" + pathSegment(assetId))
             .GET()
             .build();
         return execute(req, Asset.class);
@@ -216,7 +228,7 @@ public class SfVoiceMediaClient {
     public void deleteAsset(String assetId)
             throws SfVoiceMediaException, IOException, InterruptedException {
 
-        HttpRequest req = baseRequest("/v1/assets/" + assetId)
+        HttpRequest req = baseRequest("/api/v1/assets/" + pathSegment(assetId))
             .DELETE()
             .build();
         execute(req, Void.class);
@@ -234,11 +246,307 @@ public class SfVoiceMediaClient {
     public SearchResponse search(SearchRequest request)
             throws SfVoiceMediaException, IOException, InterruptedException {
 
-        HttpRequest req = baseRequest("/v1/search")
+        HttpRequest req = baseRequest("/api/v1/search")
             .POST(HttpRequest.BodyPublishers.ofString(toJson(request)))
             .build();
         return execute(req, SearchResponse.class);
     }
+
+    /** List native transcript prefixes visible to this API key. */
+    public PrefixListResponse listPrefixes()
+            throws SfVoiceMediaException, IOException, InterruptedException {
+        HttpRequest req = baseRequest("/api/v1/prefixes")
+            .GET()
+            .build();
+        return execute(req, PrefixListResponse.class);
+    }
+
+    // ── monitors ──────────────────────────────────────────────────────────
+
+    /**
+     * Create a new monitor.
+     *
+     * @param request the monitor creation payload
+     * @return the created Monitor
+     * @throws SfVoiceMediaException if the API responds with an error status
+     * @throws IOException if an I/O error occurs sending the request or reading the response
+     * @throws InterruptedException if the operation is interrupted while waiting for the HTTP response
+     */
+    public Monitor createMonitor(CreateMonitorRequest request)
+            throws SfVoiceMediaException, IOException, InterruptedException {
+
+        HttpRequest req = baseRequest("/api/v1/monitors")
+            .POST(HttpRequest.BodyPublishers.ofString(toJson(request)))
+            .build();
+        return execute(req, Monitor.class);
+    }
+
+    /**
+     * List all monitors.
+     *
+     * @return a MonitorListResponse containing the monitors and total count
+     * @throws SfVoiceMediaException if the API responds with an error status
+     * @throws IOException if an I/O error occurs sending the request or reading the response
+     * @throws InterruptedException if the operation is interrupted while waiting for the HTTP response
+     */
+    public MonitorListResponse listMonitors()
+            throws SfVoiceMediaException, IOException, InterruptedException {
+
+        HttpRequest req = baseRequest("/api/v1/monitors")
+            .GET()
+            .build();
+        return execute(req, MonitorListResponse.class);
+    }
+
+    /**
+     * Retrieve a monitor by its ID.
+     *
+     * @param monitorId the monitor identifier
+     * @return the Monitor corresponding to the given monitorId
+     * @throws SfVoiceMediaException if the API returns a non-2xx HTTP status
+     * @throws IOException if an I/O error occurs sending the request or reading the response
+     * @throws InterruptedException if the thread is interrupted while waiting for the HTTP response
+     */
+    public Monitor getMonitor(String monitorId)
+            throws SfVoiceMediaException, IOException, InterruptedException {
+
+        HttpRequest req = baseRequest("/api/v1/monitors/" + pathSegment(monitorId))
+            .GET()
+            .build();
+        return execute(req, Monitor.class);
+    }
+
+    /**
+     * Partially update an existing monitor.
+     *
+     * @param monitorId the monitor identifier
+     * @param request   the fields to update (null fields are omitted from the request body)
+     * @return the updated Monitor
+     * @throws SfVoiceMediaException if the API responds with an error status
+     * @throws IOException if an I/O error occurs sending the request or reading the response
+     * @throws InterruptedException if the operation is interrupted while waiting for the HTTP response
+     */
+    public Monitor updateMonitor(String monitorId, UpdateMonitorRequest request)
+            throws SfVoiceMediaException, IOException, InterruptedException {
+
+        HttpRequest req = baseRequest("/api/v1/monitors/" + pathSegment(monitorId))
+            .method("PATCH", HttpRequest.BodyPublishers.ofString(toJson(request)))
+            .build();
+        return execute(req, Monitor.class);
+    }
+
+    /**
+     * Delete a monitor by its ID.
+     *
+     * @param monitorId the monitor identifier
+     * @throws SfVoiceMediaException if the API responds with an error status
+     * @throws IOException if an I/O error occurs sending the request or reading the response
+     * @throws InterruptedException if the thread is interrupted while waiting for the HTTP response
+     */
+    public void deleteMonitor(String monitorId)
+            throws SfVoiceMediaException, IOException, InterruptedException {
+
+        HttpRequest req = baseRequest("/api/v1/monitors/" + pathSegment(monitorId))
+            .DELETE()
+            .build();
+        execute(req, Void.class);
+    }
+
+    /**
+     * List events for a monitor with filtering and pagination.
+     *
+     * @param monitorId   the monitor identifier
+     * @param matchedOnly when true, only return events where matched is true
+     * @param limit       maximum number of events to return
+     * @param offset      number of events to skip
+     * @return a MonitorEventListResponse containing the events and total count
+     * @throws SfVoiceMediaException if the API responds with an error status
+     * @throws IOException if an I/O error occurs sending the request or reading the response
+     * @throws InterruptedException if the thread is interrupted while waiting for the HTTP response
+     */
+    public MonitorEventListResponse listMonitorEvents(
+            String monitorId, boolean matchedOnly, int limit, int offset)
+            throws SfVoiceMediaException, IOException, InterruptedException {
+
+        String path = "/api/v1/monitors/" + pathSegment(monitorId) + "/events"
+            + "?matched_only=" + matchedOnly
+            + "&limit=" + limit
+            + "&offset=" + offset;
+        HttpRequest req = baseRequest(path)
+            .GET()
+            .build();
+        return execute(req, MonitorEventListResponse.class);
+    }
+
+    // ── alert convenience ────────────────────────────────────────────────
+
+    /**
+     * Create a monitor and begin polling its events in a background thread.
+     * The callback fires for each new matched event. Returns an AlertHandle
+     * that can stop polling and clean up the monitor.
+     *
+     * @param text     the monitor text (what to watch for)
+     * @param callback invoked on the polling thread for each new matched event
+     * @param opts     optional alert configuration (slug, projectId, assetClass, threshold, intervalMs)
+     * @return an AlertHandle to control and stop the background poll
+     * @throws SfVoiceMediaException if creating the monitor fails
+     * @throws IOException if an I/O error occurs creating the monitor
+     * @throws InterruptedException if the thread is interrupted while creating the monitor
+     */
+    public AlertHandle alert(String text, Consumer<MonitorEvent> callback, AlertOptions opts)
+            throws SfVoiceMediaException, IOException, InterruptedException {
+
+        CreateMonitorRequest.Builder builder = CreateMonitorRequest.text(text);
+        if (opts != null) {
+            if (opts.slug != null)       builder.slug(opts.slug);
+            if (opts.projectId != null)  builder.projectId(opts.projectId);
+            if (opts.assetClass != null) builder.assetClass(opts.assetClass);
+            if (opts.threshold != null)  builder.threshold(opts.threshold);
+        }
+
+        Monitor monitor = createMonitor(builder.build());
+        long interval = (opts != null && opts.intervalMs > 0) ? opts.intervalMs : 5000;
+
+        AlertHandle handle = new AlertHandle(monitor.getId(), this);
+        Thread poller = new Thread(() -> {
+            String checkpoint = null;
+            int consecutiveFailures = 0;
+            while (!handle.stopped) {
+                try {
+                    NewMonitorEvents batch = collectNewMonitorEvents(handle.monitorId, checkpoint);
+                    consecutiveFailures = 0;
+                    for (MonitorEvent event : batch.events) {
+                        if (handle.stopped) break;
+                        try {
+                            callback.accept(event);
+                        } catch (RuntimeException callbackError) {
+                            handle.failure = new IllegalStateException(
+                                "alert callback failed", callbackError);
+                            return;
+                        }
+                    }
+                    checkpoint = batch.checkpoint != null ? batch.checkpoint : checkpoint;
+                    Thread.sleep(interval);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                } catch (Exception e) {
+                    if (handle.stopped) break;
+                    consecutiveFailures++;
+                    boolean retryable = !(e instanceof SfVoiceMediaException) ||
+                        ((SfVoiceMediaException) e).getStatus() == 429 ||
+                        ((SfVoiceMediaException) e).getStatus() >= 500;
+                    if (!retryable || consecutiveFailures >= 3) {
+                        handle.failure = new IllegalStateException("alert polling failed", e);
+                        break;
+                    }
+                    try { Thread.sleep(interval); } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        }, "sf-voice-alert-" + monitor.getId());
+        poller.setDaemon(true);
+        poller.start();
+
+        handle.thread = poller;
+        return handle;
+    }
+
+    private NewMonitorEvents collectNewMonitorEvents(String monitorId, String checkpoint)
+            throws SfVoiceMediaException, IOException, InterruptedException {
+        final int limit = 100;
+        int offset = 0;
+        String nextCheckpoint = null;
+        List<MonitorEvent> pending = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+
+        while (true) {
+            MonitorEventListResponse response = listMonitorEvents(monitorId, true, limit, offset);
+            if (nextCheckpoint == null && !response.getItems().isEmpty()) {
+                nextCheckpoint = response.getItems().get(0).getId();
+            }
+            for (MonitorEvent event : response.getItems()) {
+                if (event.getId().equals(checkpoint)) {
+                    Collections.reverse(pending);
+                    return new NewMonitorEvents(pending, nextCheckpoint);
+                }
+                if (seen.add(event.getId())) pending.add(event);
+            }
+            offset += response.getItems().size();
+            if (response.getItems().size() < limit || offset >= response.getTotal()) {
+                Collections.reverse(pending);
+                return new NewMonitorEvents(pending, nextCheckpoint);
+            }
+        }
+    }
+
+    private static class NewMonitorEvents {
+        private final List<MonitorEvent> events;
+        private final String checkpoint;
+
+        private NewMonitorEvents(List<MonitorEvent> events, String checkpoint) {
+            this.events = events;
+            this.checkpoint = checkpoint;
+        }
+    }
+
+    /**
+     * Options for {@link #alert(String, Consumer, AlertOptions)}.
+     */
+    public static class AlertOptions {
+        public String slug;
+        public String projectId;
+        public String assetClass;
+        public Float threshold;
+        /** poll interval in milliseconds, defaults to 5000 */
+        public long intervalMs = 5000;
+    }
+
+    /**
+     * Handle returned by {@link #alert(String, Consumer, AlertOptions)} to
+     * control the background polling thread and clean up the monitor.
+     */
+    public static class AlertHandle {
+        private final String monitorId;
+        private final SfVoiceMediaClient client;
+        private volatile boolean stopped = false;
+        private volatile RuntimeException failure;
+        private Thread thread;
+
+        AlertHandle(String monitorId, SfVoiceMediaClient client) {
+            this.monitorId = monitorId;
+            this.client    = client;
+        }
+
+        public String getMonitorId() { return monitorId; }
+
+        /**
+         * Stop polling and delete the monitor. Safe to call multiple times.
+         */
+        public synchronized void stop() {
+            if (stopped) {
+                if (failure != null) throw failure;
+                return;
+            }
+            stopped = true;
+            if (thread != null) {
+                thread.interrupt();
+                try { thread.join(); } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            try {
+                client.deleteMonitor(monitorId);
+            } catch (Exception e) {
+                failure = new IllegalStateException("failed to delete alert monitor", e);
+            }
+            if (failure != null) throw failure;
+        }
+    }
+
+    // ── poll task ─────────────────────────────────────────────────────────
 
     /**
      * Waits until the specified task reaches a terminal state.
@@ -282,7 +590,7 @@ public class SfVoiceMediaClient {
         private String baseUrl = "https://api.sf-voice.com";
 
         /**
- * Sets the API key used for authentication in requests (sent as the `X-API-Key` header).
+ * Sets the API key used for bearer authentication.
  *
  * @param apiKey the API key value; must be non-null and not blank when building the client
  * @return this Builder instance

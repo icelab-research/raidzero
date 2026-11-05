@@ -109,3 +109,5 @@ report.md
 .hex
 .mix
 .ropeproject
+
+maven-signing-key.asc

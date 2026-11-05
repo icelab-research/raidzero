@@ -40,13 +40,13 @@ client = SfVoiceMedia(
 
 ## Core Concepts
 
-| Field | Description |
-|---|---|
-| `asset_id` | Customer-provided unique id for the media asset. Required on ingest. |
-| `asset_class` | Optional logical group for assets, for example one customer, workspace, repository, or project. |
-| `types` | Optional media surfaces to index or search. Allowed values: `"video"`, `"audio"`, `"transcript"`. |
-| `metadata` | Optional flat key/value metadata. Values must be strings, numbers, or booleans. |
-| `threshold` | Optional minimum match score from `0.0` to `1.0`. |
+| Field         | Description                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------- |
+| `asset_id`    | Customer-provided unique id for the media asset. Required on ingest.                              |
+| `asset_class` | Optional logical group for assets, for example one customer, workspace, repository, or project.   |
+| `types`       | Optional media surfaces to index or search. Allowed values: `"video"`, `"audio"`, `"transcript"`. |
+| `metadata`    | Optional flat key/value metadata. Values must be strings, numbers, or booleans.                   |
+| `threshold`   | Optional minimum match score from `0.0` to `1.0`.                                                 |
 
 ## Quickstart
 
@@ -67,7 +67,7 @@ try:
             "asset_id": "video_123",
             "asset_class": "customer_acme",
             "url": "https://example.com/recording.mp4",
-            "media_type": "video",
+            "media_kind": "video",
             "types": ["video", "audio", "transcript"],
             "metadata": {
                 "title": "product demo",
@@ -104,7 +104,8 @@ finally:
 
 ## Ingest
 
-`ingest(request)` submits media for indexing and returns immediately with a task id.
+`ingest(request)` submits media for indexing and returns immediately with a task
+id.
 
 ### URL Ingest
 
@@ -115,7 +116,7 @@ ingest = client.ingest(
         "asset_id": "video_123",
         "asset_class": "customer_acme",
         "url": "https://example.com/recording.mp4",
-        "media_type": "video",
+        "media_kind": "video",
         "types": ["video", "audio", "transcript"],
     }
 )
@@ -130,7 +131,7 @@ ingest = client.ingest(
         "asset_id": "support_call_456",
         "asset_class": "customer_acme",
         "s3_key": "uploads/customer_acme/support_call_456.mp3",
-        "media_type": "audio",
+        "media_kind": "audio",
         "types": ["audio", "transcript"],
     }
 )
@@ -148,7 +149,7 @@ with open("demo.mp4", "rb") as file:
             "file": file,
             "filename": "demo.mp4",
             "content_type": "video/mp4",
-            "media_type": "video",
+            "media_kind": "video",
             "types": ["video", "audio", "transcript"],
         }
     )
@@ -220,9 +221,11 @@ except SfVoiceMediaError as error:
     raise
 ```
 
-`SfVoiceMediaRequestTimeoutError` is raised when a single HTTP request exceeds the client timeout.
+`SfVoiceMediaRequestTimeoutError` is raised when a single HTTP request exceeds
+the client timeout.
 
-`SfVoiceMediaPollTimeoutError` is raised when `poll_task` exceeds its polling timeout before the task reaches `"ready"` or `"failed"`.
+`SfVoiceMediaPollTimeoutError` is raised when `poll_task` exceeds its polling
+timeout before the task reaches `"ready"` or `"failed"`.
 
 ## API Surface
 
@@ -234,4 +237,12 @@ client.list_assets(params=None) -> AssetListResponse
 client.get_asset(asset_id) -> Asset
 client.delete_asset(asset_id) -> None
 client.search(request) -> SearchResponse
+client.list_prefixes() -> PrefixListResponse
+client.create_monitor(request) -> Monitor
+client.list_monitor_events(monitor_id, matched_only, limit, offset)
+client.alert(text, callback, ...) -> AlertHandle
 ```
+
+The async client exposes the same monitor surface with awaitable methods and an
+`AsyncAlertHandle`. Always call `handle.stop()` or `await handle.stop()` so the
+worker exits, the temporary monitor is deleted, and terminal errors surface.

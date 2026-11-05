@@ -35,8 +35,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let ingest = client
         .ingest(
-            &IngestRequest::from_url("https://example.com/recording.mp4")
-                .media_type(MediaType::Video)
+            &IngestRequest::from_url_with_asset_id("recording-1", "https://example.com/recording.mp4")
+                .media_kind(MediaType::Video)
                 .metadata(MediaMetadata {
                     title: Some("product demo".into()),
                     tags: Some(vec!["demo".into()]),
@@ -77,10 +77,15 @@ The client exposes:
 - `get_asset(id)` - fetch one asset.
 - `delete_asset(id)` - soft-delete an asset.
 - `search(&SearchRequest)` - search indexed media with natural language.
+- `list_prefixes()` - list native transcript prefixes.
+- monitor CRUD plus `list_monitor_events(...)` - manage queries and page events.
+- `alert(text, callback, interval, options)` - poll matches in the background.
+
+Always call `handle.stop().await` for an alert. It aborts polling, deletes the
+temporary monitor, and returns polling, callback, or cleanup failures.
 
 ## Examples
 
 There is no standalone Rust app example yet. The crate-level examples live in
 [`src/lib.rs`](src/lib.rs) and the client examples live in
 [`src/client.rs`](src/client.rs).
-

@@ -30,7 +30,7 @@ publishing {
             pom {
                 name = 'sf-voice-media-java'
                 description = 'Java SDK for the sf-voice media API'
-                url = 'https://github.com/sf-voice/sf-voice-core'
+                url = 'https://github.com/icelab-research/raidzero'
                 licenses {
                     license {
                         name = 'MIT License'
@@ -44,9 +44,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:https://github.com/sf-voice/sf-voice-core.git'
-                    developerConnection = 'scm:git:ssh://git@github.com:sf-voice/sf-voice-core.git'
-                    url = 'https://github.com/sf-voice/sf-voice-core'
+                    connection = 'scm:git:https://github.com/icelab-research/raidzero.git'
+                    developerConnection = 'scm:git:ssh://git@github.com:icelab-research/raidzero.git'
+                    url = 'https://github.com/icelab-research/raidzero'
                 }
             }
         }

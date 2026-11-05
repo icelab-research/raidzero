@@ -39,7 +39,7 @@ publishing {
             pom {
                 name.set("sf-voice-media-kotlin")
                 description.set("Kotlin SDK for the sf-voice media API")
-                url.set("https://github.com/sf-voice/sf-voice-core")
+                url.set("https://github.com/icelab-research/raidzero")
                 licenses {
                     license {
                         name.set("MIT License")
@@ -53,9 +53,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection.set("scm:git:https://github.com/sf-voice/sf-voice-core.git")
-                    developerConnection.set("scm:git:ssh://git@github.com:sf-voice/sf-voice-core.git")
-                    url.set("https://github.com/sf-voice/sf-voice-core")
+                    connection.set("scm:git:https://github.com/icelab-research/raidzero.git")
+                    developerConnection.set("scm:git:ssh://git@github.com:icelab-research/raidzero.git")
+                    url.set("https://github.com/icelab-research/raidzero")
                 }
             }
         }

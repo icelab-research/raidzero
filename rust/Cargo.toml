@@ -4,7 +4,7 @@ version = "0.1.1"
 edition = "2021"
 description = "Async Rust client for the San Francisco Voice Company API"
 license = "MIT"
-repository = "https://github.com/sf-voice/sf-voice-core"
+repository = "https://github.com/icelab-research/raidzero"
 keywords = ["media", "video", "audio", "api", "client"]
 categories = ["api-bindings", "multimedia"]
 
@@ -13,7 +13,8 @@ reqwest = { version = "0.12", features = ["json"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1"
-tokio = { version = "1", features = ["time"] }
+tokio = { version = "1", features = ["rt", "time"] }
+percent-encoding = "2"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

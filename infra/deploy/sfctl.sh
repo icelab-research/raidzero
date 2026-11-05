@@ -4,7 +4,7 @@
 set -euo pipefail
 
 ROOT="${SF_ROOT:-/srv/sf-voice}"
-RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/sf-voice/sf-voice-core/main/infra/deploy}"
+RAW_BASE="${RAW_BASE:-https://raw.githubusercontent.com/icelab-research/raidzero/main/infra/deploy}"
 
 load_libs() {
   local repo_lib_dir

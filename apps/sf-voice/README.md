@@ -1,7 +1,7 @@
 # sf-voice JVM examples
 
-Java/Spring Boot and Kotlin/Ktor REST proxy examples for the JVM SDKs.
-The JVM SDKs target Java 17.
+Java/Spring Boot and Kotlin/Ktor REST proxy examples for the JVM SDKs. The JVM
+SDKs target Java 17.
 
 ## setup
 

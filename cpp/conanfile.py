@@ -21,7 +21,7 @@ class SfVoiceMediaConan(ConanFile):
     version     = "0.1.1"
     license     = "MIT"
     description = "Header-only C++17 helper for the sf-voice media API"
-    url         = "https://github.com/sf-voice/sf-voice-core"
+    url         = "https://github.com/icelab-research/raidzero"
     homepage    = "https://sf-voice.com"
     topics      = ("media", "video", "audio", "http", "header-only")
 

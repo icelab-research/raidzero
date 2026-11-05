@@ -2,11 +2,11 @@ defmodule SfVoiceMedia.MixProject do
   use Mix.Project
 
   @version "0.1.1"
-  @source_url "https://github.com/sf-voice/sf-voice-core"
+  @source_url "https://github.com/icelab-research/raidzero"
 
   @doc """
   Defines the Mix project configuration for the `:sf_voice` application.
-  
+
   Returns a keyword list used by Mix containing project metadata and build configuration such as the application name, version, Elixir requirement, start mode, dependencies, package metadata, package description, and documentation settings.
   """
   @spec project() :: keyword()
@@ -18,14 +18,15 @@ defmodule SfVoiceMedia.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
-      description: "Elixir SDK for the sf-voice media API — ingest, query, and search audio/video.",
+      description:
+        "Elixir SDK for the sf-voice media API — ingest, query, and search audio/video.",
       docs: docs()
     ]
   end
 
   @doc """
   Provides the OTP application configuration for the project.
-  
+
   Specifies that the `:logger` application is included in `:extra_applications` so it is started at runtime.
   """
   @spec application() :: keyword()

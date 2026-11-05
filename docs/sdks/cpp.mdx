@@ -13,13 +13,13 @@ If you're building in C++, the API is straightforward HTTP with JSON. You can us
 include(FetchContent)
 FetchContent_Declare(
   sf_voice
-  GIT_REPOSITORY https://github.com/sf-voice/sf-voice-core
+  GIT_REPOSITORY https://github.com/icelab-research/raidzero
   GIT_TAG        main
   SOURCE_SUBDIR  cpp
 )
 FetchContent_MakeAvailable(sf_voice)
 
-target_link_libraries(your_target PRIVATE sf_voice)
+target_link_libraries(your_target PRIVATE sf_voice::sf_voice)
 ```
 
 Or copy `cpp/include/sf_voice/client.hpp` directly. You need CPR and nlohmann/json on your include path either way.
@@ -27,33 +27,29 @@ Or copy `cpp/include/sf_voice/client.hpp` directly. You need CPR and nlohmann/js
 ## Create a client
 
 ```cpp
-#include <sf_voice/client.hpp>
+#include <sf_voice/sf_voice.hpp>
 
-sfvoice::SfVoiceMedia client(
-    "https://api.sf-voice.com",
-    std::getenv("SF_VOICE_API_KEY")
-);
+sf_voice::SfVoiceMedia client(std::getenv("SF_VOICE_API_KEY"));
 ```
 
 ## Ingest
 
 ```cpp
-sfvoice::IngestRequest req;
+sf_voice::IngestRequest req;
 req.source      = "url";
 req.asset_id    = "call_001";
 req.asset_class = "customer_acme";
 req.url         = "https://storage.example.com/calls/001.mp3";
 req.media_type  = "audio";
-req.types       = {"audio", "transcript"};
 
 auto result = client.ingest(req).get();
 
-if (!result) {
-    std::cerr << result.error().message << "\n";
+if (!result.ok) {
+    std::cerr << result.error.message << "\n";
     return;
 }
 
-auto task_id = result.value().task_id;
+auto task_id = result.value.task_id;
 ```
 
 ## Poll until ready
@@ -61,12 +57,12 @@ auto task_id = result.value().task_id;
 ```cpp
 auto task = client.poll_task(task_id).get();
 
-if (!task) {
-    std::cerr << task.error().message << "\n";
+if (!task.ok) {
+    std::cerr << task.error.message << "\n";
     return;
 }
 
-if (task.value().status == "failed") {
+if (task.value.status == sf_voice::TaskStatus::Failed) {
     std::cerr << "indexing failed\n";
 }
 ```
@@ -74,30 +70,31 @@ if (task.value().status == "failed") {
 ## Search
 
 ```cpp
-sfvoice::SearchRequest req;
+sf_voice::SearchRequest req;
 req.query       = "customer asks about pricing";
 req.asset_class = "customer_acme";
-req.types       = {"transcript"};
+req.types       = {sf_voice::SearchType::Transcript};
 req.threshold   = 0.7f;
 
 auto result = client.search(req).get();
 
-if (result) {
-    for (const auto& r : result.value().results) {
+if (result.ok) {
+    for (const auto& r : result.value.results) {
         std::cout << r.asset_id << " "
-                  << r.start_ms << "–" << r.end_ms << "ms\n";
+                  << r.start_ms.value_or(0) << "–"
+                  << r.end_ms.value_or(0) << "ms\n";
     }
 }
 ```
 
 ## Result type
 
-All methods return `std::future<Result<T>>`. `Result<T>` is a tagged union — check before use:
+All methods return `std::future<Result<T>>`. Check the `ok` field before use:
 
 ```cpp
-if (result) {
-    // result.value() — the response
+if (result.ok) {
+    // result.value — the response
 } else {
-    // result.error().code, result.error().message, result.error().status
+    // result.error.code, result.error.message, result.error.status
 }
 ```

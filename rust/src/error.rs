@@ -34,6 +34,23 @@ pub enum SfVoiceMediaError {
     #[error("http error: {0}")]
     Http(#[from] reqwest::Error),
 
+    /// the background alert polling task failed unexpectedly.
+    #[error("background task failed: {0}")]
+    BackgroundTask(#[from] tokio::task::JoinError),
+
+    /// alert event pagination exceeded the safety bound.
+    #[error("alert event pagination exceeded 1000 pages")]
+    AlertPaginationOverflow,
+
+    /// both alert polling and monitor cleanup failed.
+    #[error("alert polling failed ({polling}); monitor cleanup also failed ({cleanup})")]
+    AlertCleanup {
+        /// polling or callback task error.
+        polling: String,
+        /// monitor deletion error.
+        cleanup: String,
+    },
+
     /// `poll_task` exhausted its timeout before the task reached a terminal state.
     #[error("task {task_id} did not complete within the timeout")]
     PollTimeout {

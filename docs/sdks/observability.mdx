@@ -1,0 +1,63 @@
+---
+title: "Observability and alerts"
+description: "Create rich-media monitors, page through matched events, and run alert callbacks safely across every SDK."
+---
+
+Monitors continuously evaluate newly indexed rich media against a text query.
+Use them for transcript, audio, and video signals that should trigger an
+application callback or a durable event-processing workflow.
+
+## Monitor lifecycle
+
+1. Create a monitor with text plus optional project, asset-class, and threshold
+   filters.
+2. List matched events with `limit` and `offset`. The API returns newest events
+   first, with a stable ID tie-breaker. The maximum page size is 100.
+3. Persist the last processed event ID when you operate the pagination loop
+   yourself.
+4. Delete the monitor when it is no longer needed.
+
+Each SDK also exposes an `alert` helper. It creates the monitor, pages through
+all unseen events, invokes callbacks from oldest to newest, and keeps a bounded
+checkpoint instead of an ever-growing set of event IDs.
+
+## Cleanup and failures
+
+Always stop the returned alert handle. Stopping cancels polling, waits for the
+worker, and deletes the temporary monitor. Terminal polling, callback, and
+cleanup failures are surfaced by the language-specific stop operation:
+
+| SDK | Stop operation |
+| --- | --- |
+| TypeScript | `await handle.stop()` |
+| Python sync | `handle.stop()` |
+| Python async | `await handle.stop()` |
+| Go | `handle.Stop()` |
+| Rust | `handle.stop().await` |
+| Java | `handle.stop()` |
+| Kotlin | `handle.stop()` |
+| Elixir | `SfVoiceMedia.stop_alert(handle, client)` |
+| C++ | `handle.stop_checked()` |
+
+Polling retries transient transport, rate-limit, and server failures a bounded
+number of times. Authentication, validation, callback, and repeated polling
+failures stop the worker and are returned during cleanup.
+
+## TypeScript example
+
+```ts
+const handle = await client.alert(
+  "customer reports degraded audio",
+  (event) => console.log(event.id, event.asset_id),
+  { asset_class: "support-calls", interval_ms: 5_000 },
+);
+
+try {
+  // keep the process alive while alerts are needed
+} finally {
+  await handle.stop();
+}
+```
+
+Use monitor CRUD and `listMonitorEvents` directly when checkpoints must survive
+process restarts or event handling needs durable delivery semantics.

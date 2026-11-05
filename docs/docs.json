@@ -33,12 +33,12 @@
    "navbar": {
       "primary": {
          "type": "github",
-         "href": "https://github.com/sf-voice/sf-voice-core"
+         "href": "https://github.com/icelab-research/raidzero"
       }
    },
    "footer": {
       "socials": {
-         "github": "https://github.com/sf-voice/sf-voice-core",
+         "github": "https://github.com/icelab-research/raidzero",
          "discord": "https://discord.sf-voice.sh",
          "linkedin": "https://www.linkedin.com/company/sf-model/"
       }
@@ -60,6 +60,7 @@
             "group": "SDKs",
             "pages": [
                "sdks/overview",
+               "sdks/observability",
                "sdks/typescript",
                "sdks/elixir",
                "sdks/java",

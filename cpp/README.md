@@ -1,6 +1,7 @@
 # sf-voice C++ example
 
-Single-header C++17 helper for calling the sf-voice media API. Not a published package — copy it into your project or pull it in via CMake FetchContent.
+Single-header C++17 helper for calling the sf-voice media API. Not a published
+package — copy it into your project or pull it in via CMake FetchContent.
 
 Depends on `nlohmann_json` and `cpr`.
 
@@ -10,7 +11,7 @@ Depends on `nlohmann_json` and `cpr`.
 include(FetchContent)
 FetchContent_Declare(
   sf_voice
-  GIT_REPOSITORY https://github.com/sf-voice/sf-voice-core
+  GIT_REPOSITORY https://github.com/icelab-research/raidzero
   GIT_TAG        main
   SOURCE_SUBDIR  cpp
 )
@@ -19,7 +20,8 @@ FetchContent_MakeAvailable(sf_voice)
 target_link_libraries(your_target PRIVATE sf_voice::sf_voice)
 ```
 
-Or copy `include/sf_voice/` directly into your project and link against CPR and nlohmann/json yourself.
+Or copy `include/sf_voice/` directly into your project and link against CPR and
+nlohmann/json yourself.
 
 ## Local build
 
@@ -40,7 +42,7 @@ int main() {
 
     sf_voice::IngestRequest req;
     req.url = "https://example.com/call.mp3";
-    req.extra = {{"media_type", "audio"}};
+    req.media_kind = "audio";
 
     auto ingest = client.ingest(req).get();
     if (!ingest.ok) {
@@ -61,7 +63,8 @@ int main() {
 
 ## Methods
 
-All methods return `std::future<Result<T>>`. Call `.get()` to block for the result.
+All methods return `std::future<Result<T>>`. Call `.get()` to block for the
+result.
 
 - `ingest(request)` — submit URL or S3 media for indexing
 - `get_task(task_id)` — fetch task state
@@ -70,6 +73,12 @@ All methods return `std::future<Result<T>>`. Call `.get()` to block for the resu
 - `get_asset(asset_id)` — fetch one asset
 - `delete_asset(asset_id)` — soft-delete an asset
 - `search(request)` — natural language search over indexed media
+- `list_prefixes()` — list native transcript prefixes
+- monitor CRUD plus `list_monitor_events(...)` — manage queries and page events
+- `alert(text, callback, options)` — poll matches in a background thread
+
+Call `handle.stop_checked()` to join polling and delete the temporary monitor.
+Inspect the returned `Result<Empty>` for polling, callback, or cleanup failures.
 
 ## Example app
 

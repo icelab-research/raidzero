@@ -4,3 +4,5 @@ packages:
   - "ts/sdk"
   - "apps/fraud-prototype"
   - "apps/fifteenlabs"
+allowBuilds:
+  esbuild: true

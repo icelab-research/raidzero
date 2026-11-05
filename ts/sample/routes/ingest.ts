@@ -62,12 +62,12 @@ export const ingestRoutes = {
 
   // POST /api/ingest/file  (multipart: file, title?)
   // saves the uploaded file to tmp/, serves it from /media/:file,
-  // then submits to the ingest API.
+  // then submits to the ingest API via `source: "url"`.
   //
-  // note: this demo works around the absence of a binary upload endpoint by
-  // temporarily self-hosting the file and passing a localhost URL to ingest().
-  // see core/TODO.md — "Binary file upload at POST /v1/ingest" for the proper
-  // production path that avoids self-hosting.
+  // note: the API supports direct multipart uploads on `POST /v1/ingest` (and
+  // browser-direct presigned uploads on `/v1/ingest/sessions/*`); this demo
+  // keeps the self-host detour because it's structured around a local file
+  // server. swapping to direct multipart is a small follow-up.
   file: async (req: Request): Promise<Response> => {
     const form = await req.formData().catch(() => null);
     if (!form) return Response.json({ error: "expected multipart/form-data" }, { status: 400 });

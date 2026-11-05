@@ -43,12 +43,21 @@ defmodule SfVoiceMedia.Types do
 
   @typedoc "a single asset stored in the library"
   @type asset :: %{
-          id: String.t(),
-          media_type: String.t(),       # "video" | "audio"
-          source_type: String.t(),      # "url" | "s3"
-          status: String.t(),           # "pending" | "indexing" | "ready" | "failed"
+          asset_id: String.t(),
+          filename: String.t() | nil,
+          project_id: String.t() | nil,
+          asset_class: String.t() | nil,
+          # "video" | "audio"
+          media_type: String.t(),
+          # "url" | "s3"
+          source_type: String.t(),
+          types: [String.t()],
+          # "pending" | "indexing" | "ready" | "failed"
+          status: String.t(),
           metadata: map() | nil,
           duration_ms: non_neg_integer() | nil,
+          thumbnail_url: String.t() | nil,
+          thumbnail_status: String.t() | nil,
           created_at: String.t(),
           updated_at: String.t()
         }
@@ -56,33 +65,40 @@ defmodule SfVoiceMedia.Types do
   # ── ingest ───────────────────────────────────────────────────────────────────
 
   @typedoc """
-  request body for `POST /v1/ingest`.
+  request body for `POST /api/v1/ingest`.
 
   either `:url` (with `:url` key) or `:s3` (with `:s3_key` key).
-  `:media_type` and `:metadata` are optional for both.
+  `:media_kind`, `:prefix`, `:transcript_only`, and `:metadata` are optional.
   """
   @type ingest_request :: %{
           required(:source) => source(),
+          required(:asset_id) => String.t(),
+          optional(:asset_class) => String.t(),
+          optional(:project_id) => String.t(),
           optional(:url) => String.t(),
           optional(:s3_key) => String.t(),
-          optional(:media_type) => media_type(),
+          optional(:media_kind) => media_type(),
+          optional(:prefix) => String.t(),
+          optional(:transcript_only) => boolean(),
           optional(:metadata) => map()
         }
 
-  @typedoc "202 response body from `POST /v1/ingest`"
+  @typedoc "202 response body from `POST /api/v1/ingest`"
   @type ingest_response :: %{
           asset_id: String.t(),
           task_id: String.t(),
-          status: String.t()            # "pending"
+          # "pending"
+          status: String.t()
         }
 
   # ── tasks ────────────────────────────────────────────────────────────────────
 
-  @typedoc "response from `GET /v1/tasks/:task_id`"
+  @typedoc "response from `GET /api/v1/tasks/:task_id`"
   @type task :: %{
           task_id: String.t(),
           asset_id: String.t(),
-          status: String.t(),           # "pending" | "indexing" | "ready" | "failed"
+          # "pending" | "indexing" | "ready" | "failed"
+          status: String.t(),
           error: String.t() | nil,
           created_at: String.t(),
           completed_at: String.t() | nil
@@ -90,13 +106,13 @@ defmodule SfVoiceMedia.Types do
 
   # ── list assets ──────────────────────────────────────────────────────────────
 
-  @typedoc "optional query params for `GET /v1/assets`"
+  @typedoc "optional query params for `GET /api/v1/assets`"
   @type list_assets_params :: %{
           optional(:page) => pos_integer(),
           optional(:limit) => pos_integer()
         }
 
-  @typedoc "response from `GET /v1/assets`"
+  @typedoc "response from `GET /api/v1/assets`"
   @type asset_list_response :: %{
           items: [asset()],
           page_info: page_info()
@@ -104,11 +120,14 @@ defmodule SfVoiceMedia.Types do
 
   # ── search ───────────────────────────────────────────────────────────────────
 
-  @typedoc "request body for `POST /v1/search`"
+  @typedoc "request body for `POST /api/v1/search`"
   @type search_request :: %{
           required(:query) => String.t(),
           optional(:types) => [match_type()],
           optional(:asset_ids) => [String.t()],
+          optional(:asset_class) => String.t(),
+          optional(:project_id) => String.t(),
+          optional(:prefix) => String.t(),
           optional(:threshold) => float(),
           optional(:page) => pos_integer(),
           optional(:limit) => pos_integer()
@@ -116,18 +135,84 @@ defmodule SfVoiceMedia.Types do
 
   @typedoc "a single match returned by the search endpoint"
   @type search_result :: %{
-          asset_id: String.t(),
+          document_id: String.t(),
+          asset_id: String.t() | nil,
+          asset_class: String.t() | nil,
+          twelvelabs_media_id: String.t() | nil,
           score: float(),
           start_ms: non_neg_integer(),
           end_ms: non_neg_integer(),
-          match_type: String.t(),       # "visual" | "conversation" | "text_in_video"
+          # "visual" | "conversation" | "text_in_video"
+          match_type: String.t(),
+          text: String.t() | nil,
           thumbnail_url: String.t() | nil
         }
 
-  @typedoc "response from `POST /v1/search`"
+  @typedoc "response from `POST /api/v1/search`"
   @type search_response :: %{
+          search_query_id: String.t(),
           results: [search_result()],
           page_info: page_info()
+        }
+
+  @type prefix_item :: %{prefix: String.t(), owned_by_caller: boolean()}
+  @type prefix_list_response :: %{items: [prefix_item()]}
+
+  # ── monitors ─────────────────────────────────────────────────────────────────
+
+  @typedoc "a monitor that watches for matching content across ingested media"
+  @type monitor :: %{
+          required(:id) => String.t(),
+          required(:slug) => String.t(),
+          required(:text) => String.t(),
+          required(:threshold) => float(),
+          required(:enabled) => boolean(),
+          required(:created_at) => String.t(),
+          required(:updated_at) => String.t(),
+          optional(:project_id) => String.t(),
+          optional(:asset_class) => String.t()
+        }
+
+  @typedoc "paginated list of monitors from `GET /api/v1/monitors`"
+  @type monitor_list_response :: %{
+          required(:items) => [monitor()],
+          required(:total) => non_neg_integer()
+        }
+
+  @typedoc "request body for `POST /api/v1/monitors`"
+  @type create_monitor_request :: %{
+          required(:text) => String.t(),
+          optional(:slug) => String.t(),
+          optional(:project_id) => String.t(),
+          optional(:asset_class) => String.t(),
+          optional(:threshold) => float()
+        }
+
+  @typedoc "request body for `PATCH /api/v1/monitors/:id`"
+  @type update_monitor_request :: %{
+          optional(:text) => String.t(),
+          optional(:threshold) => float(),
+          optional(:enabled) => boolean(),
+          optional(:asset_class) => String.t()
+        }
+
+  @typedoc "a single event fired when a monitor matches (or is evaluated against) a document"
+  @type monitor_event :: %{
+          required(:id) => String.t(),
+          required(:monitor_id) => String.t(),
+          required(:document_id) => String.t(),
+          required(:matched) => boolean(),
+          required(:webhook_sent) => boolean(),
+          required(:created_at) => String.t(),
+          optional(:asset_id) => String.t(),
+          optional(:score) => float(),
+          optional(:match_detail) => map()
+        }
+
+  @typedoc "paginated list of monitor events from `GET /api/v1/monitors/:id/events`"
+  @type monitor_event_list_response :: %{
+          required(:items) => [monitor_event()],
+          required(:total) => non_neg_integer()
         }
 
   # ── poll_task opts ───────────────────────────────────────────────────────────
