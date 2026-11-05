@@ -18,7 +18,11 @@ verify signatures. Telnyx signs webhooks with the `telnyx-signature-ed25519` and
 
 ```bash
 bun run typecheck
+bun run test
 ```
+
+The heuristic tests are offline: they score synthetic transcript text and do
+not place calls or send content to an external model.
 
 ## run
 
@@ -29,6 +33,10 @@ bun run dev
 ## dial test
 
 This places an outbound call through Telnyx.
+
+Only call numbers whose owner has explicitly consented to the test. Live audio
+and transcripts may be processed by Telnyx and OpenAI and are held in process
+memory for the lifetime of the prototype.
 
 ```bash
 bun run scammer -- --to +15551234567 --script gift_cards_grandparent
