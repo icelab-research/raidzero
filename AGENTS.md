@@ -14,7 +14,7 @@ Each folder has its own `AGENTS.md` and `MEMORY.md`.
 
 ### Monorepo + submodule topology
 
-The parent repo is `git@github.com:sf-voice/sf-voice-core.git`. It is a
+The parent repo is `git@github.com:icelab-research/raidzero.git`. It is a
 **polyglot workspace root** — three package managers share one checkout:
 
 | Ecosystem | Manifest | Scope |
@@ -23,7 +23,7 @@ The parent repo is `git@github.com:sf-voice/sf-voice-core.git`. It is a
 | JS/TS | `pnpm-workspace.yaml` | `core/frontend`, `core/*` |
 | Elixir | `mix.exs` | `apps/ellie_ai`, `apps/resto_booking_app` |
 
-**`core/` is a git submodule** (`git@github.com:sf-voice/core.git`, branch `main`).
+**`core/` is a git submodule** (`git@github.com:icelab-research/core.git`, branch `main`).
 This means:
 
 - The parent repo pins `core/` to a specific commit. `git status` in the parent

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	sfvoice "github.com/sf-voice/sf-voice-media-go"
+	sfvoice "github.com/icelab-research/raidzero/go"
 )
 
 // Search queries the sfvoice API and prints a formatted result list to stdout.

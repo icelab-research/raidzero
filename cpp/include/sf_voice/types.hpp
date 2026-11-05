@@ -1,6 +1,9 @@
 #pragma once
 
+#include <cstdint>
+#include <iomanip>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -9,6 +12,17 @@
 #include "error.hpp"
 
 namespace sf_voice {
+
+inline std::string compatibility_asset_id(const std::string& value) {
+    std::uint64_t hash = 0xcbf29ce484222325ULL;
+    for (const unsigned char value_byte : value) {
+        hash ^= value_byte;
+        hash *= 0x100000001b3ULL;
+    }
+    std::ostringstream stream;
+    stream << "legacy-" << std::hex << std::setw(16) << std::setfill('0') << hash;
+    return stream.str();
+}
 
 // ── result type ────────────────────────────────────────────────────────────
 // ok/err container — no std::expected dependency, works on C++17.
@@ -55,7 +69,10 @@ inline TaskStatus task_status_from_string(const std::string& s) {
 enum class SearchType {
     Visual,
     Conversation,
-    TextInVideo
+    TextInVideo,
+    Video,
+    Audio,
+    Transcript
 };
 
 inline std::string search_type_to_string(SearchType t) {
@@ -63,6 +80,9 @@ inline std::string search_type_to_string(SearchType t) {
         case SearchType::Visual:       return "visual";
         case SearchType::Conversation: return "conversation";
         case SearchType::TextInVideo:  return "text_in_video";
+        case SearchType::Video:        return "video";
+        case SearchType::Audio:        return "audio";
+        case SearchType::Transcript:   return "transcript";
         default:                       return "visual";
     }
 }
@@ -86,7 +106,12 @@ inline void from_json(const nlohmann::json& j, PageInfo& p) {
 // ── asset ──────────────────────────────────────────────────────────────────
 
 struct Asset {
-    std::string id;
+    std::string asset_id;
+    std::string id;  // deprecated: use asset_id
+    std::optional<std::string> filename;
+    std::optional<std::string> project_id;
+    std::optional<std::string> asset_class;
+    std::vector<SearchType> types;
     std::string status;
     std::optional<std::string> title;
     std::optional<std::string> url;
@@ -96,8 +121,12 @@ struct Asset {
 };
 
 inline void from_json(const nlohmann::json& j, Asset& a) {
-    j.at("id").get_to(a.id);
+    j.at("asset_id").get_to(a.asset_id);
+    a.id = a.asset_id;
     j.at("status").get_to(a.status);
+    if (j.contains("filename")    && !j["filename"].is_null())    a.filename    = j["filename"].get<std::string>();
+    if (j.contains("project_id")  && !j["project_id"].is_null())  a.project_id  = j["project_id"].get<std::string>();
+    if (j.contains("asset_class") && !j["asset_class"].is_null()) a.asset_class = j["asset_class"].get<std::string>();
     if (j.contains("title")      && !j["title"].is_null())      a.title      = j["title"].get<std::string>();
     if (j.contains("url")        && !j["url"].is_null())        a.url        = j["url"].get<std::string>();
     if (j.contains("created_at") && !j["created_at"].is_null()) a.created_at = j["created_at"].get<std::string>();
@@ -135,7 +164,11 @@ struct IngestRequest {
     std::optional<std::string> asset_class;    // logical group for scoped search
     std::optional<std::string> url;            // required when source == "url"
     std::optional<std::string> s3_key;         // required when source == "s3"
-    std::optional<std::string> media_type;     // "audio" or "video"
+    std::optional<std::string> project_id;
+    std::optional<std::string> media_kind;     // "audio" or "video"
+    std::optional<std::string> media_type;     // deprecated: use media_kind
+    std::optional<std::string> prefix;
+    std::optional<bool> transcript_only;
     nlohmann::json metadata;                   // flat key/value pairs for your own use
     nlohmann::json extra;                      // additional fields forwarded as-is
 };
@@ -144,11 +177,17 @@ struct IngestRequest {
 inline nlohmann::json to_json(const IngestRequest& req) {
     nlohmann::json j = req.extra.is_object() ? req.extra : nlohmann::json::object();
     j["source"]   = req.source;
-    j["asset_id"] = req.asset_id;
+    if (!req.asset_id.empty()) j["asset_id"] = req.asset_id;
+    else if (req.url)           j["asset_id"] = compatibility_asset_id(*req.url);
+    else if (req.s3_key)        j["asset_id"] = compatibility_asset_id(*req.s3_key);
     if (req.asset_class) j["asset_class"] = *req.asset_class;
     if (req.url)         j["url"]         = *req.url;
     if (req.s3_key)      j["s3_key"]      = *req.s3_key;
-    if (req.media_type)  j["media_type"]  = *req.media_type;
+    if (req.project_id)  j["project_id"]  = *req.project_id;
+    if (req.media_kind)       j["media_kind"] = *req.media_kind;
+    else if (req.media_type)  j["media_kind"] = *req.media_type;
+    if (req.prefix)      j["prefix"]      = *req.prefix;
+    if (req.transcript_only) j["transcript_only"] = *req.transcript_only;
     if (req.metadata.is_object() && !req.metadata.empty()) j["metadata"] = req.metadata;
     return j;
 }
@@ -189,6 +228,8 @@ struct SearchRequest {
     std::string query;
     std::vector<SearchType> types;             // modalities to search; empty = all
     std::optional<std::string> asset_class;    // scope to one logical group
+    std::optional<std::string> project_id;
+    std::optional<std::string> prefix;
     std::vector<std::string> asset_ids;        // scope to specific assets
     std::optional<double> threshold;           // 0.0–1.0; higher = fewer, more confident
     int page  = 1;
@@ -204,6 +245,8 @@ inline nlohmann::json to_json(const SearchRequest& req) {
         j["types"] = arr;
     }
     if (req.asset_class)         j["asset_class"] = *req.asset_class;
+    if (req.project_id)          j["project_id"]  = *req.project_id;
+    if (req.prefix)              j["prefix"]      = *req.prefix;
     if (!req.asset_ids.empty())  j["asset_ids"]   = req.asset_ids;
     if (req.threshold)           j["threshold"]   = *req.threshold;
     j["page"]  = req.page;
@@ -212,32 +255,66 @@ inline nlohmann::json to_json(const SearchRequest& req) {
 }
 
 struct SearchResult {
+    std::string document_id;
     std::string asset_id;
+    std::optional<std::string> asset_class;
+    std::optional<std::string> twelvelabs_media_id;
     std::optional<double> score;
     std::optional<double> start_ms;
     std::optional<double> end_ms;
+    std::optional<std::string> match_type;
+    std::optional<std::string> text;
     std::optional<std::string> transcript_snippet;
     nlohmann::json metadata;  // full result preserved for unknown fields
 };
 
 inline void from_json(const nlohmann::json& j, SearchResult& r) {
-    j.at("asset_id").get_to(r.asset_id);
+    j.at("document_id").get_to(r.document_id);
+    if (j.contains("asset_id")           && !j["asset_id"].is_null())           r.asset_id           = j["asset_id"].get<std::string>();
+    if (j.contains("asset_class")        && !j["asset_class"].is_null())        r.asset_class        = j["asset_class"].get<std::string>();
+    if (j.contains("twelvelabs_media_id") && !j["twelvelabs_media_id"].is_null()) r.twelvelabs_media_id = j["twelvelabs_media_id"].get<std::string>();
     if (j.contains("score")              && !j["score"].is_null())              r.score              = j["score"].get<double>();
     if (j.contains("start_ms")           && !j["start_ms"].is_null())           r.start_ms           = j["start_ms"].get<double>();
     if (j.contains("end_ms")             && !j["end_ms"].is_null())             r.end_ms             = j["end_ms"].get<double>();
-    if (j.contains("transcript_snippet") && !j["transcript_snippet"].is_null()) r.transcript_snippet = j["transcript_snippet"].get<std::string>();
+    if (j.contains("match_type")         && !j["match_type"].is_null())         r.match_type         = j["match_type"].get<std::string>();
+    if (j.contains("text")               && !j["text"].is_null()) {
+        r.text = j["text"].get<std::string>();
+        r.transcript_snippet = r.text;
+    } else if (j.contains("transcript_snippet") && !j["transcript_snippet"].is_null()) {
+        r.transcript_snippet = j["transcript_snippet"].get<std::string>();
+    }
     r.metadata = j;
 }
 
 struct SearchResponse {
+    std::string search_query_id;
     std::vector<SearchResult> results;
     PageInfo page_info;
 };
 
 inline void from_json(const nlohmann::json& j, SearchResponse& r) {
+    j.at("search_query_id").get_to(r.search_query_id);
     j.at("results").get_to(r.results);
     if (j.contains("page_info")) j.at("page_info").get_to(r.page_info);
     else r.page_info = j.get<PageInfo>();
+}
+
+struct Prefix {
+    std::string prefix;
+    bool owned_by_caller = false;
+};
+
+inline void from_json(const nlohmann::json& j, Prefix& p) {
+    j.at("prefix").get_to(p.prefix);
+    j.at("owned_by_caller").get_to(p.owned_by_caller);
+}
+
+struct PrefixListResponse {
+    std::vector<Prefix> items;
+};
+
+inline void from_json(const nlohmann::json& j, PrefixListResponse& r) {
+    j.at("items").get_to(r.items);
 }
 
 // ── monitors ──────────────────────────────────────────────────────────

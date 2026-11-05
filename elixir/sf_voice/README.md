@@ -4,8 +4,8 @@ Elixir client for the sf-voice media API.
 
 Version: `0.1.1`
 
-Ingest audio or video from a URL or S3, let sf-voice index speech, visuals,
-and on-screen text, then search your entire media library with natural language.
+Ingest audio or video from a URL or S3, let sf-voice index speech, visuals, and
+on-screen text, then search your entire media library with natural language.
 Results include millisecond timestamps so you can deep-link to the exact moment.
 
 ## Installation
@@ -73,8 +73,17 @@ client = SfVoiceMedia.new("sk-...",
 
 Search results carry a `match_type` string — what the query matched against:
 
-| Value | What was searched |
-|---|---|
-| `"conversation"` | Transcribed speech |
-| `"visual"` | Visual scene analysis |
-| `"text_in_video"` | On-screen text (OCR) |
+| Value             | What was searched     |
+| ----------------- | --------------------- |
+| `"conversation"`  | Transcribed speech    |
+| `"visual"`        | Visual scene analysis |
+| `"text_in_video"` | On-screen text (OCR)  |
+
+## Observability
+
+Use `list_prefixes/1`, monitor CRUD, and `list_monitor_events/3` to operate
+continuous rich-media queries. `alert/4` adds bounded background polling and
+oldest-to-newest callbacks.
+
+Always call `SfVoiceMedia.stop_alert(handle, client)`. It waits for the worker,
+deletes the temporary monitor, and returns polling, callback, or cleanup errors.

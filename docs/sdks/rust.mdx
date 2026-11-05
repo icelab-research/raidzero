@@ -31,15 +31,14 @@ let client = SfVoiceMedia::new(
 ## Ingest
 
 ```rust
-use sf_voice_media::{SfVoiceMedia, IngestRequest, MediaType};
+use sf_voice_media::types::{IngestRequest, MediaType};
 
-let resp = client.ingest(
-    IngestRequest::from_url("https://storage.example.com/calls/001.mp3")
-        .asset_id("call_001")
-        .asset_class("customer_acme")
-        .media_type(MediaType::Audio)
-        .build(),
-).await?;
+let mut request = IngestRequest::from_url_with_asset_id(
+    "call_001",
+    "https://storage.example.com/calls/001.mp3",
+).media_kind(MediaType::Audio);
+request.asset_class = Some("customer_acme".into());
+let resp = client.ingest(&request).await?;
 
 let task_id = resp.task_id;
 ```
@@ -47,23 +46,27 @@ let task_id = resp.task_id;
 S3:
 
 ```rust
-use sf_voice_media::IngestRequest;
+use sf_voice_media::types::{IngestRequest, MediaType};
 
-let resp = client.ingest(
-    IngestRequest::from_s3("calls/customer_acme/001.mp3")
-        .asset_id("call_001")
-        .asset_class("customer_acme")
-        .media_type(MediaType::Audio)
-        .build(),
-).await?;
+let mut request = IngestRequest::from_s3_with_asset_id(
+    "call_001",
+    "calls/customer_acme/001.mp3",
+).media_kind(MediaType::Audio);
+request.asset_class = Some("customer_acme".into());
+let resp = client.ingest(&request).await?;
 ```
 
 ## Poll until ready
 
 ```rust
-use sf_voice_media::TaskStatus;
+use sf_voice_media::types::TaskStatus;
+use std::time::Duration;
 
-let task = client.poll_task(&task_id, None).await?;
+let task = client.poll_task(
+    &task_id,
+    Duration::from_millis(1_500),
+    Duration::from_secs(120),
+).await?;
 
 match task.status {
     TaskStatus::Ready => println!("indexed: {}", task.asset_id),
@@ -72,20 +75,18 @@ match task.status {
 }
 ```
 
-`poll_task` takes optional `PollOptions { interval_ms, timeout_ms }`. Defaults: 1500ms interval, 120s timeout.
+Pass the polling interval and total timeout as `Duration` values.
 
 ## Search
 
 ```rust
-use sf_voice_media::SearchRequest;
+use sf_voice_media::types::SearchRequest;
 
-let resp = client.search(
-    SearchRequest::new("customer asks about pricing")
-        .asset_class("customer_acme")
-        .threshold(0.7)
-        .limit(10)
-        .build(),
-).await?;
+let mut request = SearchRequest::new("customer asks about pricing")
+    .threshold(0.7)
+    .limit(10);
+request.asset_class = Some("customer_acme".into());
+let resp = client.search(&request).await?;
 
 for result in &resp.results {
     println!("{} {}–{}ms ({:.2})", result.asset_id, result.start_ms, result.end_ms, result.score);
@@ -96,7 +97,7 @@ for result in &resp.results {
 
 ```rust
 // list
-let resp = client.list_assets(None).await?;
+let resp = client.list_assets(None, None).await?;
 
 // get one
 let asset = client.get_asset("call_001").await?;

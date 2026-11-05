@@ -3,13 +3,17 @@ package com.sfvoice.media
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * coroutine-based client for the sf-voice media API.
@@ -36,6 +40,9 @@ class SfVoiceMediaClient(
     }
 
     private val http = HttpClient(CIO) {
+        defaultRequest {
+            bearerAuth(apiKey)
+        }
         install(ContentNegotiation) {
             json(json)
         }
@@ -75,10 +82,9 @@ class SfVoiceMediaClient(
      * @return An IngestResponse containing the created task's ID and associated metadata.
      */
     suspend fun ingest(request: IngestRequest): IngestResponse {
-        val response = http.post("$baseUrl/v1/ingest") {
-            header("X-API-Key", apiKey)
+        val response = http.post("$baseUrl/api/v1/ingest") {
             contentType(ContentType.Application.Json)
-            setBody(request)
+            setBody(request.normalized())
         }
         response.throwIfError()
         return response.body()
@@ -91,8 +97,7 @@ class SfVoiceMediaClient(
      * @return The requested Task containing its current status and metadata.
      */
     suspend fun getTask(taskId: String): Task {
-        val response = http.get("$baseUrl/v1/tasks/$taskId") {
-            header("X-API-Key", apiKey)
+        val response = http.get("$baseUrl/api/v1/tasks/${taskId.encodeURLPathPart()}") {
         }
         response.throwIfError()
         return response.body()
@@ -106,8 +111,7 @@ class SfVoiceMediaClient(
      * @return An AssetListResponse containing the requested page of assets.
      */
     suspend fun listAssets(page: Int = 1, limit: Int = 20): AssetListResponse {
-        val response = http.get("$baseUrl/v1/assets") {
-            header("X-API-Key", apiKey)
+        val response = http.get("$baseUrl/api/v1/assets") {
             parameter("page", page)
             parameter("limit", limit)
         }
@@ -122,8 +126,7 @@ class SfVoiceMediaClient(
      * @return The asset with the specified ID.
      */
     suspend fun getAsset(assetId: String): Asset {
-        val response = http.get("$baseUrl/v1/assets/$assetId") {
-            header("X-API-Key", apiKey)
+        val response = http.get("$baseUrl/api/v1/assets/${assetId.encodeURLPathPart()}") {
         }
         response.throwIfError()
         return response.body()
@@ -138,8 +141,7 @@ class SfVoiceMediaClient(
      * @throws SfVoiceMediaException if the HTTP response indicates an error.
      */
     suspend fun deleteAsset(assetId: String) {
-        val response = http.delete("$baseUrl/v1/assets/$assetId") {
-            header("X-API-Key", apiKey)
+        val response = http.delete("$baseUrl/api/v1/assets/${assetId.encodeURLPathPart()}") {
         }
         response.throwIfError()
     }
@@ -151,11 +153,17 @@ class SfVoiceMediaClient(
      * @return A SearchResponse containing matching results and associated metadata.
      */
     suspend fun search(request: SearchRequest): SearchResponse {
-        val response = http.post("$baseUrl/v1/search") {
-            header("X-API-Key", apiKey)
+        val response = http.post("$baseUrl/api/v1/search") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }
+        response.throwIfError()
+        return response.body()
+    }
+
+    /** List native transcript prefixes visible to this API key. */
+    suspend fun listPrefixes(): PrefixListResponse {
+        val response = http.get("$baseUrl/api/v1/prefixes")
         response.throwIfError()
         return response.body()
     }
@@ -196,8 +204,7 @@ class SfVoiceMediaClient(
      * @return The created Monitor.
      */
     suspend fun createMonitor(request: CreateMonitorRequest): Monitor {
-        val response = http.post("$baseUrl/v1/monitors") {
-            header("X-API-Key", apiKey)
+        val response = http.post("$baseUrl/api/v1/monitors") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }
@@ -211,8 +218,7 @@ class SfVoiceMediaClient(
      * @return A MonitorListResponse containing the monitors and total count.
      */
     suspend fun listMonitors(): MonitorListResponse {
-        val response = http.get("$baseUrl/v1/monitors") {
-            header("X-API-Key", apiKey)
+        val response = http.get("$baseUrl/api/v1/monitors") {
         }
         response.throwIfError()
         return response.body()
@@ -225,8 +231,7 @@ class SfVoiceMediaClient(
      * @return The requested Monitor.
      */
     suspend fun getMonitor(monitorId: String): Monitor {
-        val response = http.get("$baseUrl/v1/monitors/$monitorId") {
-            header("X-API-Key", apiKey)
+        val response = http.get("$baseUrl/api/v1/monitors/${monitorId.encodeURLPathPart()}") {
         }
         response.throwIfError()
         return response.body()
@@ -242,8 +247,7 @@ class SfVoiceMediaClient(
      * @return The updated Monitor.
      */
     suspend fun updateMonitor(monitorId: String, request: UpdateMonitorRequest): Monitor {
-        val response = http.patch("$baseUrl/v1/monitors/$monitorId") {
-            header("X-API-Key", apiKey)
+        val response = http.patch("$baseUrl/api/v1/monitors/${monitorId.encodeURLPathPart()}") {
             contentType(ContentType.Application.Json)
             setBody(request)
         }
@@ -257,8 +261,7 @@ class SfVoiceMediaClient(
      * @param monitorId The ID of the monitor to delete.
      */
     suspend fun deleteMonitor(monitorId: String) {
-        val response = http.delete("$baseUrl/v1/monitors/$monitorId") {
-            header("X-API-Key", apiKey)
+        val response = http.delete("$baseUrl/api/v1/monitors/${monitorId.encodeURLPathPart()}") {
         }
         response.throwIfError()
     }
@@ -278,8 +281,7 @@ class SfVoiceMediaClient(
         limit: Int = 50,
         offset: Int = 0,
     ): MonitorEventListResponse {
-        val response = http.get("$baseUrl/v1/monitors/$monitorId/events") {
-            header("X-API-Key", apiKey)
+        val response = http.get("$baseUrl/api/v1/monitors/${monitorId.encodeURLPathPart()}/events") {
             parameter("matched_only", matchedOnly)
             parameter("limit", limit)
             parameter("offset", offset)
@@ -330,17 +332,33 @@ class SfVoiceMediaClient(
             )
         )
 
-        val seen = mutableSetOf<String>()
-        val job = CoroutineScope(Dispatchers.Default).launch {
+        val failure = AtomicReference<Throwable?>()
+        val job = CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            var checkpoint: String? = null
+            var consecutiveFailures = 0
             while (isActive) {
                 delay(intervalMs)
-                val events = runCatching {
-                    listMonitorEvents(monitor.id, matchedOnly = true)
-                }.getOrNull() ?: continue
-
-                for (event in events.items) {
-                    if (seen.add(event.id)) {
-                        callback(event)
+                try {
+                    val batch = collectNewMonitorEvents(monitor.id, checkpoint)
+                    consecutiveFailures = 0
+                    for (event in batch.events) {
+                        ensureActive()
+                        try {
+                            callback(event)
+                        } catch (error: Throwable) {
+                            throw AlertCallbackException(error)
+                        }
+                    }
+                    checkpoint = batch.checkpoint ?: checkpoint
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Throwable) {
+                    consecutiveFailures++
+                    val retryable = error !is AlertCallbackException &&
+                        (error !is SfVoiceMediaException || error.status == 429 || error.status >= 500)
+                    if (!retryable || consecutiveFailures >= 3) {
+                        failure.set(error)
+                        return@launch
                     }
                 }
             }
@@ -350,7 +368,41 @@ class SfVoiceMediaClient(
             monitorId = monitor.id,
             job = job,
             client = this,
+            failure = failure,
         )
+    }
+
+    private data class NewMonitorEvents(
+        val events: List<MonitorEvent>,
+        val checkpoint: String?,
+    )
+
+    private suspend fun collectNewMonitorEvents(
+        monitorId: String,
+        checkpoint: String?,
+    ): NewMonitorEvents {
+        val limit = 100
+        var offset = 0
+        var nextCheckpoint: String? = null
+        val pending = mutableListOf<MonitorEvent>()
+        val seen = mutableSetOf<String>()
+
+        repeat(1_000) {
+            val response = listMonitorEvents(monitorId, matchedOnly = true, limit = limit, offset = offset)
+            nextCheckpoint = nextCheckpoint ?: response.items.firstOrNull()?.id
+            for (event in response.items) {
+                if (event.id == checkpoint) {
+                    return NewMonitorEvents(pending.asReversed(), nextCheckpoint)
+                }
+                if (seen.add(event.id)) pending.add(event)
+            }
+            offset += response.items.size
+            if (response.items.size < limit || offset.toLong() >= response.total) {
+                return NewMonitorEvents(pending.asReversed(), nextCheckpoint)
+            }
+        }
+
+        throw IllegalStateException("alert event pagination exceeded 1000 pages")
     }
 
     /**
@@ -363,6 +415,9 @@ class SfVoiceMediaClient(
     }
 }
 
+private class AlertCallbackException(cause: Throwable) :
+    RuntimeException("alert callback failed", cause)
+
 /**
  * Handle returned by [SfVoiceMediaClient.alert] to control background polling.
  *
@@ -372,15 +427,31 @@ class AlertHandle(
     val monitorId: String,
     private val job: Job,
     private val client: SfVoiceMediaClient,
+    private val failure: AtomicReference<Throwable?>,
 ) {
+    private val stopMutex = Mutex()
+    private var stopped = false
+    private var stopError: Throwable? = null
+
     /**
-     * Cancels the background polling and attempts to delete the monitor.
-     *
-     * The monitor deletion is best-effort; failures are silently ignored.
+     * Cancels background polling, deletes the monitor, and surfaces polling failures.
      */
     suspend fun stop() {
-        job.cancel()
-        job.join()
-        runCatching { client.deleteMonitor(monitorId) }
+        stopMutex.withLock {
+            if (stopped) {
+                stopError?.let { throw it }
+                return
+            }
+
+            stopped = true
+            try {
+                job.cancelAndJoin()
+                client.deleteMonitor(monitorId)
+                stopError = failure.get()
+            } catch (error: Throwable) {
+                stopError = error
+            }
+            stopError?.let { throw it }
+        }
     }
 }

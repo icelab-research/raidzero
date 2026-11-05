@@ -1,6 +1,9 @@
 package sfvoice
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // ── enums ─────────────────────────────────────────────────────────────────
 
@@ -29,14 +32,54 @@ type PageInfo struct {
 // ── asset ─────────────────────────────────────────────────────────────────
 
 type Asset struct {
-	ID         string            `json:"id"`
-	MediaType  string            `json:"media_type"`
-	SourceType string            `json:"source_type"`
-	Status     TaskStatus        `json:"status"`
-	Metadata   map[string]string `json:"metadata,omitempty"`
-	DurationMs *int64            `json:"duration_ms,omitempty"`
-	CreatedAt  string            `json:"created_at"`
-	UpdatedAt  string            `json:"updated_at"`
+	AssetID         string            `json:"asset_id"`
+	ID              string            `json:"-"` // deprecated: use AssetID
+	Filename        string            `json:"filename,omitempty"`
+	ProjectID       string            `json:"project_id,omitempty"`
+	AssetClass      string            `json:"asset_class,omitempty"`
+	MediaType       string            `json:"media_type"`
+	SourceType      string            `json:"source_type"`
+	Types           []string          `json:"types"`
+	Status          TaskStatus        `json:"status"`
+	Metadata        map[string]string `json:"metadata,omitempty"`
+	MetadataValues  map[string]any    `json:"-"`
+	DurationMs      *int64            `json:"duration_ms,omitempty"`
+	ThumbnailURL    string            `json:"thumbnail_url,omitempty"`
+	ThumbnailStatus string            `json:"thumbnail_status,omitempty"`
+	CreatedAt       string            `json:"created_at"`
+	UpdatedAt       string            `json:"updated_at"`
+}
+
+func (asset *Asset) UnmarshalJSON(data []byte) error {
+	type assetAlias Asset
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+	metadata := fields["metadata"]
+	delete(fields, "metadata")
+	withoutMetadata, err := json.Marshal(fields)
+	if err != nil {
+		return err
+	}
+	var decoded assetAlias
+	if err := json.Unmarshal(withoutMetadata, &decoded); err != nil {
+		return err
+	}
+	*asset = Asset(decoded)
+	asset.ID = asset.AssetID
+	if len(metadata) > 0 && string(metadata) != "null" {
+		if err := json.Unmarshal(metadata, &asset.MetadataValues); err != nil {
+			return err
+		}
+		asset.Metadata = make(map[string]string)
+		for key, value := range asset.MetadataValues {
+			if text, ok := value.(string); ok {
+				asset.Metadata[key] = text
+			}
+		}
+	}
+	return nil
 }
 
 type AssetListResponse struct {
@@ -47,11 +90,58 @@ type AssetListResponse struct {
 // ── ingest ────────────────────────────────────────────────────────────────
 
 type IngestRequest struct {
-	Source    string            `json:"source"`              // "url" | "s3"
-	URL       string            `json:"url,omitempty"`
-	S3Key     string            `json:"s3_key,omitempty"`
-	MediaType string            `json:"media_type,omitempty"` // "video" | "audio"
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	Source         string            `json:"source"` // "url" | "s3"
+	AssetID        string            `json:"asset_id"`
+	AssetClass     string            `json:"asset_class,omitempty"`
+	ProjectID      string            `json:"project_id,omitempty"`
+	URL            string            `json:"url,omitempty"`
+	S3Key          string            `json:"s3_key,omitempty"`
+	MediaKind      string            `json:"media_kind,omitempty"` // "video" | "audio"
+	MediaType      string            `json:"-"`                    // deprecated: use MediaKind
+	Metadata       map[string]string `json:"metadata,omitempty"`
+	MetadataValues map[string]any    `json:"-"`
+	Prefix         string            `json:"prefix,omitempty"`
+	TranscriptOnly bool              `json:"transcript_only,omitempty"`
+}
+
+func (request IngestRequest) MarshalJSON() ([]byte, error) {
+	type ingestRequestAlias IngestRequest
+	payload := struct {
+		ingestRequestAlias
+		MediaKind string `json:"media_kind,omitempty"`
+	}{
+		ingestRequestAlias: ingestRequestAlias(request),
+		MediaKind:          request.MediaKind,
+	}
+	if payload.MediaKind == "" {
+		payload.MediaKind = request.MediaType
+	}
+	if payload.AssetID == "" {
+		if request.URL != "" {
+			payload.AssetID = compatibilityAssetID(request.URL)
+		} else {
+			payload.AssetID = compatibilityAssetID(request.S3Key)
+		}
+	}
+	encoded, err := json.Marshal(payload)
+	if err != nil || request.MetadataValues == nil {
+		return encoded, err
+	}
+	var fields map[string]any
+	if err := json.Unmarshal(encoded, &fields); err != nil {
+		return nil, err
+	}
+	fields["metadata"] = request.MetadataValues
+	return json.Marshal(fields)
+}
+
+func compatibilityAssetID(value string) string {
+	hash := uint64(0xcbf29ce484222325)
+	for _, valueByte := range []byte(value) {
+		hash ^= uint64(valueByte)
+		hash *= 0x100000001b3
+	}
+	return fmt.Sprintf("legacy-%016x", hash)
 }
 
 type IngestResponse struct {
@@ -65,6 +155,8 @@ type IngestResponse struct {
 type Task struct {
 	TaskID      string     `json:"task_id"`
 	AssetID     string     `json:"asset_id"`
+	AssetClass  string     `json:"asset_class,omitempty"`
+	Types       []string   `json:"types"`
 	Status      TaskStatus `json:"status"`
 	Error       string     `json:"error,omitempty"`
 	CreatedAt   string     `json:"created_at"`
@@ -74,26 +166,43 @@ type Task struct {
 // ── search ────────────────────────────────────────────────────────────────
 
 type SearchRequest struct {
-	Query     string   `json:"query"`
-	Types     []string `json:"types,omitempty"`      // "visual" | "conversation" | "text_in_video"
-	AssetIDs  []string `json:"asset_ids,omitempty"`
-	Threshold float64  `json:"threshold,omitempty"`
-	Page      int      `json:"page,omitempty"`
-	Limit     int      `json:"limit,omitempty"`
+	Query      string   `json:"query"`
+	Types      []string `json:"types,omitempty"` // "visual" | "conversation" | "text_in_video"
+	AssetIDs   []string `json:"asset_ids,omitempty"`
+	AssetClass string   `json:"asset_class,omitempty"`
+	ProjectID  string   `json:"project_id,omitempty"`
+	Prefix     string   `json:"prefix,omitempty"`
+	Threshold  float64  `json:"threshold,omitempty"`
+	Page       int      `json:"page,omitempty"`
+	Limit      int      `json:"limit,omitempty"`
 }
 
 type SearchResult struct {
-	AssetID      string  `json:"asset_id"`
-	Score        float64 `json:"score"`
-	StartMs      int64   `json:"start_ms"`
-	EndMs        int64   `json:"end_ms"`
-	MatchType    string  `json:"match_type"`
-	ThumbnailURL string  `json:"thumbnail_url,omitempty"`
+	DocumentID        string  `json:"document_id"`
+	AssetID           string  `json:"asset_id,omitempty"`
+	AssetClass        string  `json:"asset_class,omitempty"`
+	TwelveLabsMediaID string  `json:"twelvelabs_media_id,omitempty"`
+	Score             float64 `json:"score"`
+	StartMs           int64   `json:"start_ms"`
+	EndMs             int64   `json:"end_ms"`
+	MatchType         string  `json:"match_type"`
+	Text              string  `json:"text,omitempty"`
+	ThumbnailURL      string  `json:"thumbnail_url,omitempty"`
 }
 
 type SearchResponse struct {
-	Results  []SearchResult `json:"results"`
-	PageInfo PageInfo       `json:"page_info"`
+	SearchQueryID string         `json:"search_query_id"`
+	Results       []SearchResult `json:"results"`
+	PageInfo      PageInfo       `json:"page_info"`
+}
+
+type Prefix struct {
+	Prefix        string `json:"prefix"`
+	OwnedByCaller bool   `json:"owned_by_caller"`
+}
+
+type PrefixListResponse struct {
+	Items []Prefix `json:"items"`
 }
 
 // ── monitor ──────────────────────────────────────────────────────────────

@@ -34,6 +34,17 @@ def _task_response(status: str = "ready") -> dict:
     }
 
 
+def _monitor_event(event_id: str) -> dict:
+    return {
+        "id": event_id,
+        "monitor_id": "monitor_123",
+        "document_id": f"document_{event_id}",
+        "matched": True,
+        "webhook_sent": False,
+        "created_at": "2026-11-05T12:00:00Z",
+    }
+
+
 class SfVoiceMediaClientTests(unittest.TestCase):
     def test_ingest_url_sends_request_object(self) -> None:
         seen = {}
@@ -57,7 +68,7 @@ class SfVoiceMediaClientTests(unittest.TestCase):
                 "asset_id": "video_123",
                 "asset_class": "customer_acme",
                 "url": "https://example.com/video.mp4",
-                "media_type": "video",
+                "media_kind": "video",
                 "types": ["video", "transcript"],
                 "metadata": {"title": "demo"},
             }
@@ -65,8 +76,8 @@ class SfVoiceMediaClientTests(unittest.TestCase):
 
         self.assertEqual(response.asset_id, "video_123")
         self.assertEqual(seen["method"], "POST")
-        self.assertEqual(seen["path"], "/v1/ingest")
-        self.assertEqual(seen["headers"]["x-api-key"], "sk_test")
+        self.assertEqual(seen["path"], "/api/v1/ingest")
+        self.assertEqual(seen["headers"]["authorization"], "Bearer sk_test")
         self.assertEqual(seen["headers"]["content-type"], "application/json")
         self.assertEqual(
             seen["body"],
@@ -75,7 +86,7 @@ class SfVoiceMediaClientTests(unittest.TestCase):
                 "asset_id": "video_123",
                 "asset_class": "customer_acme",
                 "url": "https://example.com/video.mp4",
-                "media_type": "video",
+                "media_kind": "video",
                 "types": ["video", "transcript"],
                 "metadata": {"title": "demo"},
             },
@@ -103,7 +114,7 @@ class SfVoiceMediaClientTests(unittest.TestCase):
                 "file": b"hello",
                 "filename": "demo.mp4",
                 "content_type": "video/mp4",
-                "media_type": "video",
+                "media_kind": "video",
                 "types": ["video", "transcript"],
                 "metadata": {"title": "demo"},
             }
@@ -117,6 +128,31 @@ class SfVoiceMediaClientTests(unittest.TestCase):
         self.assertIn(b'filename="demo.mp4"', seen["body"])
         self.assertIn(b"hello", seen["body"])
 
+    def test_ingest_preserves_media_type_alias(self) -> None:
+        seen = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen["body"] = json.loads(request.read())
+            return httpx.Response(202, json=_ingest_response())
+
+        client = SfVoiceMedia(
+            base_url=API_BASE_URL,
+            api_key="sk_test",
+            transport=httpx.MockTransport(handler),
+        )
+
+        client.ingest(
+            {
+                "source": "url",
+                "asset_id": "video_123",
+                "url": "https://example.com/video.mp4",
+                "media_type": "video",
+            }
+        )
+
+        self.assertEqual(seen["body"]["media_kind"], "video")
+        self.assertNotIn("media_type", seen["body"])
+
     def test_search_sends_request_object(self) -> None:
         seen = {}
 
@@ -125,8 +161,10 @@ class SfVoiceMediaClientTests(unittest.TestCase):
             return httpx.Response(
                 200,
                 json={
+                    "search_query_id": "search_123",
                     "results": [
                         {
+                            "document_id": "document_123",
                             "asset_id": "video_123",
                             "score": 0.9,
                             "start_ms": 1000,
@@ -191,7 +229,7 @@ class SfVoiceMediaClientTests(unittest.TestCase):
 
         client.get_task("task/with space")
 
-        self.assertEqual(seen["path"], "/v1/tasks/task%2Fwith%20space")
+        self.assertEqual(seen["path"], "/api/v1/tasks/task%2Fwith%20space")
 
     def test_error_envelope_raises_sdk_error(self) -> None:
         def handler(request: httpx.Request) -> httpx.Response:
@@ -245,6 +283,37 @@ class SfVoiceMediaClientTests(unittest.TestCase):
         self.assertEqual(raised.exception.task_id, "task_123")
         self.assertEqual(raised.exception.timeout_ms, 2)
 
+    def test_alert_pager_delivers_oldest_first_until_checkpoint(self) -> None:
+        offsets = []
+        newest_first = [
+            _monitor_event(f"event_{number}") for number in range(150, 0, -1)
+        ]
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            offset = int(request.url.params["offset"])
+            offsets.append(offset)
+            return httpx.Response(
+                200,
+                json={"items": newest_first[offset : offset + 100], "total": 150},
+            )
+
+        client = SfVoiceMedia(
+            base_url=API_BASE_URL,
+            api_key="sk_test",
+            transport=httpx.MockTransport(handler),
+        )
+
+        events, checkpoint = client._collect_new_monitor_events(
+            "monitor_123", "event_50"
+        )
+
+        self.assertEqual(offsets, [0, 100])
+        self.assertEqual(checkpoint, "event_150")
+        self.assertEqual(
+            [event.id for event in events],
+            [f"event_{number}" for number in range(51, 151)],
+        )
+
 
 class AsyncSfVoiceMediaClientTests(unittest.IsolatedAsyncioTestCase):
     async def test_async_ingest_url_sends_request_object(self) -> None:
@@ -275,6 +344,38 @@ class AsyncSfVoiceMediaClientTests(unittest.IsolatedAsyncioTestCase):
                 "asset_id": "video_123",
                 "url": "https://example.com/video.mp4",
             },
+        )
+
+    async def test_async_alert_pager_delivers_oldest_first_until_checkpoint(
+        self,
+    ) -> None:
+        offsets = []
+        newest_first = [
+            _monitor_event(f"event_{number}") for number in range(150, 0, -1)
+        ]
+
+        async def handler(request: httpx.Request) -> httpx.Response:
+            offset = int(request.url.params["offset"])
+            offsets.append(offset)
+            return httpx.Response(
+                200,
+                json={"items": newest_first[offset : offset + 100], "total": 150},
+            )
+
+        async with AsyncSfVoiceMedia(
+            base_url=API_BASE_URL,
+            api_key="sk_test",
+            transport=httpx.MockTransport(handler),
+        ) as client:
+            events, checkpoint = await client._collect_new_monitor_events(
+                "monitor_123", "event_50"
+            )
+
+        self.assertEqual(offsets, [0, 100])
+        self.assertEqual(checkpoint, "event_150")
+        self.assertEqual(
+            [event.id for event in events],
+            [f"event_{number}" for number in range(51, 151)],
         )
 
 

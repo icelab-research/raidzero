@@ -7,8 +7,11 @@
 
 export type MediaType = "video" | "audio";
 export type SourceType = "url" | "s3" | "file";
+export type AssetSourceType = SourceType | "upload" | "youtube" | "twitter";
 export type TaskStatus = "pending" | "indexing" | "ready" | "failed";
 export type MediaSearchType = "video" | "audio" | "transcript";
+export type SearchMatchType =
+  MediaSearchType | "visual" | "conversation" | "text_in_video";
 
 export type MediaMetadata = Record<string, string | number | boolean>;
 export type IngestFile = Blob | ArrayBuffer | Uint8Array;
@@ -16,16 +19,17 @@ export type IngestFile = Blob | ArrayBuffer | Uint8Array;
 /** a single asset in the library */
 export type Asset = {
   asset_id: string;
+  filename?: string;
+  project_id?: string;
   asset_class?: string;
   media_type: MediaType;
-  source_type: SourceType;
+  source_type: AssetSourceType;
   types: MediaSearchType[];
   status: TaskStatus;
   metadata?: MediaMetadata;
   duration_ms?: number;
-  recorded_at?: string;
-  recorded_at_source?: string;
-  recorded_at_confidence?: string;
+  thumbnail_url?: string;
+  thumbnail_status?: "pending" | "ready" | "not_applicable";
   created_at: string;
   updated_at: string;
 };
@@ -46,7 +50,10 @@ export type IngestBase = {
   asset_id: string;
   /** logical group for this asset. the backend maps this to a provider index. */
   asset_class?: string;
+  media_kind?: MediaType;
+  /** @deprecated use media_kind */
   media_type?: MediaType;
+  project_id?: string;
   metadata?: MediaMetadata;
   /** real-world asset timestamp. include an offset when known, e.g. 2026-06-05T14:30:00-07:00. */
   recorded_at?: string;
@@ -135,6 +142,7 @@ export type SearchRequest = {
   query: string;
   types?: MediaSearchType[];
   asset_ids?: string[];
+  project_id?: string;
   asset_class?: string;
   /** set this to "all" to intentionally search every asset. */
   scope?: "all";
@@ -157,15 +165,20 @@ export type SearchResultText = SearchResult & {
 };
 
 export type SearchResult = {
-  asset_id: string;
+  document_id: string;
+  asset_id?: string;
+  asset_class?: string;
+  twelvelabs_media_id?: string;
   score: number;
   start_ms: number;
   end_ms: number;
-  match_type: MediaSearchType;
+  match_type: SearchMatchType;
+  text?: string;
   thumbnail_url?: string;
 };
 
 export type SearchResponse = {
+  search_query_id: string;
   results: SearchResult[];
   page_info: PageInfo;
 };

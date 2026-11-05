@@ -12,9 +12,9 @@ import (
 	"os"
 	"strings"
 
-	sfvoice "github.com/sf-voice/sf-voice-media-go"
-	"github.com/sf-voice/sf-voice-media-go/example/config"
-	"github.com/sf-voice/sf-voice-media-go/example/internal/example"
+	"github.com/icelab-research/raidzero/apps/livecart/config"
+	"github.com/icelab-research/raidzero/apps/livecart/internal/example"
+	sfvoice "github.com/icelab-research/raidzero/go"
 )
 
 // main parses command-line flags, loads configuration, ingests one or more media URLs
@@ -84,7 +84,7 @@ func main() {
 	ctx := context.Background()
 
 	// metadata is attached to every ingest request — useful for attribution and filtering later.
-	metadata := map[string]string{"demo": "go-example"}
+	metadata := map[string]any{"demo": "go-example"}
 
 	fmt.Printf("ingesting %d URL(s) with concurrency=%d …\n", len(urls), *concFlag)
 	results := example.IngestAll(ctx, client, urls, *concFlag, metadata)

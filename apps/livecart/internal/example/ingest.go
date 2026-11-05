@@ -3,12 +3,13 @@ package example
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"sync"
 	"time"
 
-	sfvoice "github.com/sf-voice/sf-voice-media-go"
+	sfvoice "github.com/icelab-research/raidzero/go"
 )
 
 // IngestResult holds the outcome of one ingested URL.
@@ -24,7 +25,7 @@ type IngestResult struct {
 // If concurrency is less than 1 it is treated as 1.
 // metadata is attached to every IngestRequest for tagging and later filtering; pass nil to omit.
 // The returned slice has the same length and order as urls.
-func IngestAll(ctx context.Context, client *sfvoice.Client, urls []string, concurrency int, metadata map[string]string) []IngestResult {
+func IngestAll(ctx context.Context, client *sfvoice.Client, urls []string, concurrency int, metadata map[string]any) []IngestResult {
 	if concurrency < 1 {
 		concurrency = 1
 	}
@@ -50,14 +51,15 @@ func IngestAll(ctx context.Context, client *sfvoice.Client, urls []string, concu
 
 // ingestOne ingests a single URL and polls until the task reaches a terminal state
 // or the 5-minute timeout elapses.
-func ingestOne(ctx context.Context, client *sfvoice.Client, url string, metadata map[string]string) IngestResult {
+func ingestOne(ctx context.Context, client *sfvoice.Client, url string, metadata map[string]any) IngestResult {
 	t0 := time.Now()
 
 	// URL ingestion — for S3 use: sfvoice.IngestRequest{Source: "s3", S3Key: "bucket/key.mp4"}
 	resp, err := client.Ingest(ctx, sfvoice.IngestRequest{
-		Source:   "url",
-		URL:      url,
-		Metadata: metadata,
+		Source:         "url",
+		AssetID:        assetIDFromURL(url),
+		URL:            url,
+		MetadataValues: metadata,
 	})
 	if err != nil {
 		// typed check: *sfvoice.Error carries a machine-readable Code and HTTP Status,
@@ -95,4 +97,9 @@ func ingestOne(ctx context.Context, client *sfvoice.Client, url string, metadata
 		TaskID:  resp.TaskID,
 		Elapsed: time.Since(t0),
 	}
+}
+
+func assetIDFromURL(url string) string {
+	digest := sha256.Sum256([]byte(url))
+	return fmt.Sprintf("go-example-%x", digest[:8])
 }

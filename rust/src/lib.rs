@@ -13,7 +13,7 @@
 //!     let client = SfVoiceMedia::new("https://api.sf-voice.com", "your-api-key");
 //!
 //!     let ingest = client
-//!         .ingest(&IngestRequest::from_url("https://example.com/video.mp4"))
+//!         .ingest(&IngestRequest::from_url_with_asset_id("video-1", "https://example.com/video.mp4"))
 //!         .await?;
 //!
 //!     let task = client

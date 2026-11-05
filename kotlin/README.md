@@ -45,9 +45,9 @@ suspend fun main() {
         val ingest = client.ingest(
             IngestRequest(
                 source = "url",
+                assetId = "recording-1",
                 url = "https://example.com/recording.mp4",
                 mediaType = MediaType.Video,
-                metadata = mapOf("title" to "product demo"),
             )
         )
 
@@ -80,7 +80,14 @@ The client exposes suspend functions:
 - `getAsset(assetId)` - fetch one asset.
 - `deleteAsset(assetId)` - soft-delete an asset.
 - `search(request)` - search indexed media with natural language.
+- `listPrefixes()` - list native transcript prefixes.
+- monitor CRUD plus `listMonitorEvents(...)` - manage queries and page events.
+- `alert(text, callback, ...)` - poll matches in a supervised coroutine.
+
+Always call `handle.stop()` for an alert. It joins the coroutine, deletes the
+temporary monitor, and throws any terminal polling or cleanup failure.
 
 ## Examples
 
-- [`../apps/sf-voice/kotlin-example`](../apps/sf-voice/kotlin-example) - Ktor REST proxy example.
+- [`../apps/sf-voice/kotlin-example`](../apps/sf-voice/kotlin-example) - Ktor
+  REST proxy example.

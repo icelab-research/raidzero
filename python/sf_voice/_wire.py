@@ -23,17 +23,39 @@ def compact_dict(values: Mapping[str, Any]) -> Dict[str, Any]:
     return {key: value for key, value in values.items() if value is not None}
 
 
+def normalize_ingest_request(request: Mapping[str, Any]) -> Dict[str, Any]:
+    """map deprecated ingest names to the current wire contract."""
+    normalized = compact_dict(request)
+    legacy_media_type = normalized.pop("media_type", None)
+    if "media_kind" not in normalized and legacy_media_type is not None:
+        normalized["media_kind"] = legacy_media_type
+    return normalized
+
+
 def build_file_ingest_payload(
     request: Mapping[str, Any],
 ) -> Tuple[Dict[str, str], Dict[str, Tuple[str, Any, str]]]:
     """build the multipart body used for file ingest."""
+    request = normalize_ingest_request(request)
     content_type = request.get("content_type") or "application/octet-stream"
     fields: Dict[str, str] = {}
 
-    for key in ("source", "asset_id", "asset_class", "media_type", "content_type"):
+    for key in (
+        "source",
+        "asset_id",
+        "asset_class",
+        "project_id",
+        "media_kind",
+        "content_type",
+        "prefix",
+    ):
         value = request.get(key)
         if value is not None:
             fields[key] = str(value)
+
+    transcript_only = request.get("transcript_only")
+    if transcript_only is not None:
+        fields["transcript_only"] = str(bool(transcript_only)).lower()
 
     for key in ("metadata", "types"):
         value = request.get(key)

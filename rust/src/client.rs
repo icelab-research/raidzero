@@ -16,9 +16,17 @@ use crate::{
     types::{
         AlertOptions, Asset, AssetListResponse, CreateMonitorRequest, IngestRequest,
         IngestResponse, Monitor, MonitorEvent, MonitorEventListResponse, MonitorListResponse,
-        SearchRequest, SearchResponse, Task, UpdateMonitorRequest,
+        PrefixListResponse, SearchRequest, SearchResponse, Task, UpdateMonitorRequest,
     },
 };
+
+fn is_retryable_alert_error(error: &SfVoiceMediaError) -> bool {
+    match error {
+        SfVoiceMediaError::Http(_) => true,
+        SfVoiceMediaError::Api { status, .. } => *status == 429 || *status >= 500,
+        _ => false,
+    }
+}
 
 /// async client for the sf-voice media API.
 ///
@@ -36,20 +44,22 @@ impl SfVoiceMedia {
     /// Creates a new SfVoiceMedia client configured with a base URL and API key.
     ///
     /// The provided `base_url` should not have a trailing slash. The `api_key` is attached to every request
-    /// as the `X-API-Key` header and is marked sensitive in the underlying HTTP client.
+    /// as a bearer token and is marked sensitive in the underlying HTTP client.
     ///
     /// # Examples
     ///
     /// ```
+    /// use sf_voice_media::SfVoiceMedia;
+    ///
     /// let client = SfVoiceMedia::new("https://api.example.com", "my-secret-key");
     /// ```
     pub fn new(base_url: impl Into<String>, api_key: impl Into<String>) -> Self {
-        let mut auth_value = header::HeaderValue::from_str(&api_key.into())
+        let mut auth_value = header::HeaderValue::from_str(&format!("Bearer {}", api_key.into()))
             .expect("api key must be a valid header value");
         auth_value.set_sensitive(true);
 
         let mut default_headers = header::HeaderMap::new();
-        default_headers.insert("X-API-Key", auth_value);
+        default_headers.insert(header::AUTHORIZATION, auth_value);
 
         let http = Client::builder()
             .default_headers(default_headers)
@@ -68,13 +78,17 @@ impl SfVoiceMedia {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let client = SfVoiceMedia { base_url: "https://api.example.com".to_string(), http: reqwest::Client::new() };
-    /// let full = client.url("/v1/ingest");
-    /// assert_eq!(full, "https://api.example.com/v1/ingest");
+    /// let full = client.url("/api/v1/ingest");
+    /// assert_eq!(full, "https://api.example.com/api/v1/ingest");
     /// ```
     fn url(&self, path: &str) -> String {
         format!("{}{}", self.base_url, path)
+    }
+
+    fn path_segment(value: &str) -> String {
+        percent_encoding::utf8_percent_encode(value, percent_encoding::NON_ALPHANUMERIC).to_string()
     }
 
     /// Converts a non-success HTTP response into an `SfVoiceMediaError` and otherwise returns the original response.
@@ -105,10 +119,12 @@ impl SfVoiceMedia {
     /// # Examples
     ///
     /// ```no_run
+    /// use sf_voice_media::{SfVoiceMedia, types::IngestRequest};
+    ///
     /// #[tokio::main]
     /// async fn main() {
     ///     let client = SfVoiceMedia::new("https://api.example.com", "my-api-key");
-    ///     let request = IngestRequest { /* fields */ };
+    ///     let request = IngestRequest::from_url_with_asset_id("video-1", "https://example.com/video.mp4");
     ///     let response = client.ingest(&request).await.unwrap();
     ///     // response contains a task id to poll for progress
     /// }
@@ -119,7 +135,7 @@ impl SfVoiceMedia {
     ) -> Result<IngestResponse, SfVoiceMediaError> {
         let response = self
             .http
-            .post(self.url("/v1/ingest"))
+            .post(self.url("/api/v1/ingest"))
             .json(request)
             .send()
             .await?;
@@ -138,16 +154,21 @@ impl SfVoiceMedia {
     /// # Examples
     ///
     /// ```no_run
+    /// use sf_voice_media::SfVoiceMedia;
+    ///
     /// # async fn run() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = SfVoiceMedia::new("https://api.example.com", "my-api-key");
     /// let task = client.get_task("task-id-123").await?;
-    /// println!("task id: {}", task.id);
+    /// println!("task id: {}", task.task_id);
     /// # Ok(()) }
     /// ```
     pub async fn get_task(&self, task_id: impl Into<String>) -> Result<Task, SfVoiceMediaError> {
         let response = self
             .http
-            .get(self.url(&format!("/v1/tasks/{}", task_id.into())))
+            .get(self.url(&format!(
+                "/api/v1/tasks/{}",
+                Self::path_segment(&task_id.into())
+            )))
             .send()
             .await?;
 
@@ -166,6 +187,7 @@ impl SfVoiceMedia {
     ///
     /// ```no_run
     /// use std::time::Duration;
+    /// use sf_voice_media::SfVoiceMedia;
     ///
     /// # async fn doc_example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = SfVoiceMedia::new("https://api.example.com", "api-key");
@@ -215,14 +237,14 @@ impl SfVoiceMedia {
     /// let resp = tokio::runtime::Runtime::new().unwrap().block_on(async {
     ///     client.list_assets(None, Some(50)).await
     /// }).unwrap();
-    /// assert!(resp.assets.len() <= 50);
+    /// assert!(resp.items.len() <= 50);
     /// ```
     pub async fn list_assets(
         &self,
         page: Option<u32>,
         limit: Option<u32>,
     ) -> Result<AssetListResponse, SfVoiceMediaError> {
-        let mut request = self.http.get(self.url("/v1/assets"));
+        let mut request = self.http.get(self.url("/api/v1/assets"));
 
         if let Some(p) = page {
             request = request.query(&[("page", p)]);
@@ -247,14 +269,17 @@ impl SfVoiceMedia {
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ///     let client = SfVoiceMedia::new("https://api.example.com", "my-api-key");
     ///     let asset = client.get_asset("asset-id").await?;
-    ///     println!("{}", asset.id);
+    ///     println!("{}", asset.asset_id());
     ///     Ok(())
     /// }
     /// ```
     pub async fn get_asset(&self, id: impl Into<String>) -> Result<Asset, SfVoiceMediaError> {
         let response = self
             .http
-            .get(self.url(&format!("/v1/assets/{}", id.into())))
+            .get(self.url(&format!(
+                "/api/v1/assets/{}",
+                Self::path_segment(&id.into())
+            )))
             .send()
             .await?;
 
@@ -263,7 +288,7 @@ impl SfVoiceMedia {
 
     /// Soft-delete an asset by its ID.
     ///
-    /// Sends a DELETE request to `/v1/assets/{id}`. The backend keeps the record but excludes it from list results.
+    /// Sends a DELETE request to `/api/v1/assets/{id}`. The backend keeps the record but excludes it from list results.
     /// A successful deletion is indicated by HTTP 204 No Content.
     ///
     /// # Returns
@@ -273,6 +298,8 @@ impl SfVoiceMedia {
     /// # Examples
     ///
     /// ```no_run
+    /// use sf_voice_media::{SfVoiceMedia, SfVoiceMediaError};
+    ///
     /// # async fn run() -> Result<(), SfVoiceMediaError> {
     /// let client = SfVoiceMedia::new("https://api.example.com", "api-key");
     /// client.delete_asset("asset-id").await?;
@@ -282,7 +309,10 @@ impl SfVoiceMedia {
     pub async fn delete_asset(&self, id: impl Into<String>) -> Result<(), SfVoiceMediaError> {
         let response = self
             .http
-            .delete(self.url(&format!("/v1/assets/{}", id.into())))
+            .delete(self.url(&format!(
+                "/api/v1/assets/{}",
+                Self::path_segment(&id.into())
+            )))
             .send()
             .await?;
 
@@ -303,12 +333,11 @@ impl SfVoiceMedia {
     /// # Examples
     ///
     /// ```no_run
+    /// use sf_voice_media::{SfVoiceMedia, types::SearchRequest};
+    ///
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let client = SfVoiceMedia::new("https://api.example.com", "API_KEY");
-    /// let request = SearchRequest {
-    ///     // fill required fields
-    ///     ..Default::default()
-    /// };
+    /// let request = SearchRequest::new("product launch");
     /// let response = client.search(&request).await?;
     /// // use `response`
     /// # Ok(())
@@ -320,11 +349,17 @@ impl SfVoiceMedia {
     ) -> Result<SearchResponse, SfVoiceMediaError> {
         let response = self
             .http
-            .post(self.url("/v1/search"))
+            .post(self.url("/api/v1/search"))
             .json(request)
             .send()
             .await?;
 
+        Ok(Self::check(response).await?.json().await?)
+    }
+
+    /// List native transcript prefixes visible to this API key.
+    pub async fn list_prefixes(&self) -> Result<PrefixListResponse, SfVoiceMediaError> {
+        let response = self.http.get(self.url("/api/v1/prefixes")).send().await?;
         Ok(Self::check(response).await?.json().await?)
     }
 
@@ -337,7 +372,7 @@ impl SfVoiceMedia {
     ) -> Result<Monitor, SfVoiceMediaError> {
         let response = self
             .http
-            .post(self.url("/v1/monitors"))
+            .post(self.url("/api/v1/monitors"))
             .json(request)
             .send()
             .await?;
@@ -347,7 +382,7 @@ impl SfVoiceMedia {
 
     /// List all monitors.
     pub async fn list_monitors(&self) -> Result<MonitorListResponse, SfVoiceMediaError> {
-        let response = self.http.get(self.url("/v1/monitors")).send().await?;
+        let response = self.http.get(self.url("/api/v1/monitors")).send().await?;
 
         Ok(Self::check(response).await?.json().await?)
     }
@@ -359,7 +394,7 @@ impl SfVoiceMedia {
     ) -> Result<Monitor, SfVoiceMediaError> {
         let response = self
             .http
-            .get(self.url(&format!("/v1/monitors/{}", monitor_id.into())))
+            .get(self.url(&format!("/api/v1/monitors/{}", monitor_id.into())))
             .send()
             .await?;
 
@@ -374,7 +409,7 @@ impl SfVoiceMedia {
     ) -> Result<Monitor, SfVoiceMediaError> {
         let response = self
             .http
-            .patch(self.url(&format!("/v1/monitors/{}", monitor_id.into())))
+            .patch(self.url(&format!("/api/v1/monitors/{}", monitor_id.into())))
             .json(request)
             .send()
             .await?;
@@ -389,7 +424,7 @@ impl SfVoiceMedia {
     ) -> Result<(), SfVoiceMediaError> {
         let response = self
             .http
-            .delete(self.url(&format!("/v1/monitors/{}", monitor_id.into())))
+            .delete(self.url(&format!("/api/v1/monitors/{}", monitor_id.into())))
             .send()
             .await?;
 
@@ -407,7 +442,7 @@ impl SfVoiceMedia {
     ) -> Result<MonitorEventListResponse, SfVoiceMediaError> {
         let mut request = self
             .http
-            .get(self.url(&format!("/v1/monitors/{}/events", monitor_id.into())));
+            .get(self.url(&format!("/api/v1/monitors/{}/events", monitor_id.into())));
 
         if let Some(v) = matched_only {
             request = request.query(&[("matched_only", v.to_string())]);
@@ -455,42 +490,80 @@ impl SfVoiceMedia {
         let mid = monitor_id.clone();
 
         let task = tokio::spawn(async move {
-            let mut seen: HashSet<String> = HashSet::new();
-
+            let mut checkpoint: Option<String> = None;
+            let mut consecutive_failures = 0;
             while !flag_clone.load(Ordering::Relaxed) {
                 let mut offset = 0u64;
                 let limit = 100u64;
+                let mut next_checkpoint: Option<String> = None;
+                let mut seen_this_poll: HashSet<String> = HashSet::new();
+                let mut pending_events: Vec<MonitorEvent> = Vec::new();
+                let mut page_count = 0;
+                let mut poll_error = None;
 
-                loop {
-                    match client_clone
+                'pages: loop {
+                    if page_count >= 1_000 {
+                        return Err(SfVoiceMediaError::AlertPaginationOverflow);
+                    }
+                    page_count += 1;
+                    let resp = match client_clone
                         .list_monitor_events(&mid, Some(true), Some(limit), Some(offset))
                         .await
                     {
-                        Ok(resp) => {
-                            let fetched_count = resp.items.len() as u64;
-                            for event in resp.items {
-                                if seen.insert(event.id.clone()) {
-                                    callback(event);
-                                }
-                            }
-                            // Evict old IDs to prevent unbounded memory growth
-                            if seen.len() > 10_000 {
-                                seen.clear();
-                            }
-                            // If we got fewer items than the limit, we've exhausted this page cycle
-                            if fetched_count < limit {
-                                break;
-                            }
-                            offset += fetched_count;
-                        }
-                        Err(e) => {
-                            eprintln!("error fetching monitor events: {:?}", e);
+                        Ok(response) => response,
+                        Err(error) => {
+                            poll_error = Some(error);
                             break;
                         }
+                    };
+                    let fetched_count = resp.items.len() as u64;
+
+                    if next_checkpoint.is_none() {
+                        next_checkpoint = resp.items.first().map(|event| event.id.clone());
                     }
+
+                    for event in resp.items {
+                        if checkpoint.as_deref() == Some(event.id.as_str()) {
+                            break 'pages;
+                        }
+                        if flag_clone.load(Ordering::Relaxed) {
+                            return Ok(());
+                        }
+                        if seen_this_poll.insert(event.id.clone()) {
+                            pending_events.push(event);
+                        }
+                    }
+
+                    offset += fetched_count;
+                    if fetched_count < limit || offset >= resp.total {
+                        break;
+                    }
+                }
+
+                if let Some(error) = poll_error {
+                    consecutive_failures += 1;
+                    if consecutive_failures >= 3 || !is_retryable_alert_error(&error) {
+                        return Err(error);
+                    }
+                    tokio::time::sleep(effective_interval).await;
+                    continue;
+                }
+                consecutive_failures = 0;
+
+                for event in pending_events.into_iter().rev() {
+                    if flag_clone.load(Ordering::Relaxed) {
+                        return Ok(());
+                    }
+                    callback(event);
+                }
+
+                if next_checkpoint.is_some() {
+                    checkpoint = next_checkpoint;
                 }
                 tokio::time::sleep(effective_interval).await;
             }
+
+            Ok(())
         });
 
         Ok(AlertHandle {
@@ -507,7 +580,7 @@ impl SfVoiceMedia {
 pub struct AlertHandle {
     pub monitor_id: String,
     stop_flag: Arc<AtomicBool>,
-    task: tokio::task::JoinHandle<()>,
+    task: tokio::task::JoinHandle<Result<(), SfVoiceMediaError>>,
     client: SfVoiceMedia,
 }
 
@@ -515,8 +588,45 @@ impl AlertHandle {
     /// stop polling and delete the monitor. consumes the handle.
     pub async fn stop(self) -> Result<(), SfVoiceMediaError> {
         self.stop_flag.store(true, Ordering::Relaxed);
-        let _ = self.task.await;
-        self.client.delete_monitor(&self.monitor_id).await?;
-        Ok(())
+        self.task.abort();
+        let poll_result = match self.task.await {
+            Ok(result) => result,
+            Err(error) if error.is_cancelled() => Ok(()),
+            Err(error) => Err(error.into()),
+        };
+        let delete_result = self.client.delete_monitor(&self.monitor_id).await;
+
+        match (poll_result, delete_result) {
+            (Ok(()), Ok(())) => Ok(()),
+            (Err(polling), Ok(())) => Err(polling),
+            (Ok(()), Err(cleanup)) => Err(cleanup),
+            (Err(polling), Err(cleanup)) => Err(SfVoiceMediaError::AlertCleanup {
+                polling: polling.to_string(),
+                cleanup: cleanup.to_string(),
+            }),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_retryable_alert_error;
+    use crate::error::SfVoiceMediaError;
+
+    #[test]
+    fn alert_retries_only_transient_api_failures() {
+        let rate_limited = SfVoiceMediaError::Api {
+            code: "rate_limited".into(),
+            message: "retry later".into(),
+            status: 429,
+        };
+        let invalid = SfVoiceMediaError::Api {
+            code: "invalid".into(),
+            message: "bad request".into(),
+            status: 400,
+        };
+
+        assert!(is_retryable_alert_error(&rate_limited));
+        assert!(!is_retryable_alert_error(&invalid));
     }
 }

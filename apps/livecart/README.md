@@ -2,18 +2,18 @@
 
 A runnable demo covering the full sf-voice media SDK surface.
 
-| Capability | File |
-|---|---|
-| Concurrent URL ingest (semaphore + WaitGroup) | `internal/example/ingest.go` |
-| Task polling until ready | `internal/example/ingest.go` |
+| Capability                                                           | File                                                       |
+| -------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Concurrent URL ingest (semaphore + WaitGroup)                        | `internal/example/ingest.go`                               |
+| Task polling until ready                                             | `internal/example/ingest.go`                               |
 | Typed error handling (`*sfvoice.Error`, `*sfvoice.PollTimeoutError`) | `internal/example/ingest.go`, `internal/example/assets.go` |
-| Metadata tagging on ingest | `cmd/example/main.go` |
-| S3 ingest path (commented) | `internal/example/ingest.go` |
-| Semantic search with score threshold + pagination | `internal/example/search.go` |
-| Thumbnail URL in results | `internal/example/search.go` |
-| List assets (paginated) | `internal/example/assets.go` |
-| Fetch single asset detail | `internal/example/assets.go` |
-| Soft-delete assets | `internal/example/assets.go` |
+| Metadata tagging on ingest                                           | `cmd/example/main.go`                                      |
+| S3 ingest path (commented)                                           | `internal/example/ingest.go`                               |
+| Semantic search with score threshold + pagination                    | `internal/example/search.go`                               |
+| Thumbnail URL in results                                             | `internal/example/search.go`                               |
+| List assets (paginated)                                              | `internal/example/assets.go`                               |
+| Fetch single asset detail                                            | `internal/example/assets.go`                               |
+| Soft-delete assets                                                   | `internal/example/assets.go`                               |
 
 ## Setup
 
@@ -22,11 +22,11 @@ cp .env.example .env
 # fill in SF_VOICE_API_KEY
 ```
 
-| Variable | Required | Description |
-|---|---|---|
-| `SF_VOICE_API_KEY` | yes | Your API key |
-| `SF_VOICE_BASE_URL` | no | Defaults to `https://api.sf-voice.com` |
-| `SAMPLE_MEDIA_URL` | no | Fallback URL when `-urls` is not passed |
+| Variable            | Required | Description                             |
+| ------------------- | -------- | --------------------------------------- |
+| `SF_VOICE_API_KEY`  | yes      | Your API key                            |
+| `SF_VOICE_BASE_URL` | no       | Defaults to `https://api.sf-voice.com`  |
+| `SAMPLE_MEDIA_URL`  | no       | Fallback URL when `-urls` is not passed |
 
 ## Run
 
@@ -38,15 +38,15 @@ go run ./cmd/example \
 
 ## Flags
 
-| Flag | Default | Description |
-|---|---|---|
-| `-urls` | `$SAMPLE_MEDIA_URL` | Comma-separated media URLs to ingest |
-| `-query` | _(required)_ | Search query to run after ingest |
-| `-types` | | Comma-separated match types: `visual`, `conversation`, `text_in_video` |
-| `-threshold` | `0` | Minimum search score 0–1; `0` uses the server default |
-| `-page` | `1` | Search result page (1-based) |
-| `-concurrency` | `4` | Max concurrent ingests |
-| `-delete` | `false` | Soft-delete the freshly ingested assets after the demo |
+| Flag           | Default             | Description                                                            |
+| -------------- | ------------------- | ---------------------------------------------------------------------- |
+| `-urls`        | `$SAMPLE_MEDIA_URL` | Comma-separated media URLs to ingest                                   |
+| `-query`       | _(required)_        | Search query to run after ingest                                       |
+| `-types`       |                     | Comma-separated match types: `visual`, `conversation`, `text_in_video` |
+| `-threshold`   | `0`                 | Minimum search score 0–1; `0` uses the server default                  |
+| `-page`        | `1`                 | Search result page (1-based)                                           |
+| `-concurrency` | `4`                 | Max concurrent ingests                                                 |
+| `-delete`      | `false`             | Soft-delete the freshly ingested assets after the demo                 |
 
 ## Examples
 
@@ -73,7 +73,7 @@ go run ./cmd/example \
 
 ```go
 import (
-    sfvoice "github.com/sf-voice/sf-voice-media-go"
+    sfvoice "github.com/icelab-research/raidzero/go"
     "errors"
 )
 

@@ -5,7 +5,7 @@ defmodule SfVoiceMedia.Client do
   build one with `SfVoiceMedia.new/2` — don't construct this struct directly.
 
   fields:
-  - `api_key`   — sent as the `X-API-Key` request header
+  - `api_key`   — sent as an authorization bearer token
   - `base_url`  — scheme + host, no trailing slash (e.g. "https://api.sf-voice.com")
   - `http_opts` — keyword list forwarded verbatim to every `Req` call
   """

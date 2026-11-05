@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	sfvoice "github.com/sf-voice/sf-voice-media-go"
+	sfvoice "github.com/icelab-research/raidzero/go"
 )
 
 // ManageAssets demonstrates the three asset management methods:
@@ -26,7 +26,7 @@ func ManageAssets(ctx context.Context, client *sfvoice.Client, spotAssetID strin
 		if a.DurationMs != nil {
 			dur = fmt.Sprintf("%.1fs", float64(*a.DurationMs)/1000)
 		}
-		fmt.Printf("  • %-36s  %-10s  %s\n", a.ID, a.Status, dur)
+		fmt.Printf("  • %-36s  %-10s  %s\n", a.AssetID, a.Status, dur)
 	}
 
 	if spotAssetID != "" {
@@ -42,7 +42,7 @@ func ManageAssets(ctx context.Context, client *sfvoice.Client, spotAssetID strin
 				return fmt.Errorf("get asset: %w", err)
 			}
 		} else {
-			fmt.Printf("  id          %s\n", asset.ID)
+			fmt.Printf("  id          %s\n", asset.AssetID)
 			fmt.Printf("  media_type  %s\n", asset.MediaType)
 			fmt.Printf("  source      %s\n", asset.SourceType)
 			fmt.Printf("  status      %s\n", asset.Status)

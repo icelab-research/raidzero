@@ -21,6 +21,7 @@ public class Monitor {
     public String getAssetClass() { return assetClass; }
     public float getThreshold()   { return threshold != null ? threshold : 0.7f; }
     public boolean isEnabled()    { return enabled != null ? enabled : true; }
+    public boolean getEnabled()   { return isEnabled(); }
     public String getCreatedAt()  { return createdAt; }
     public String getUpdatedAt()  { return updatedAt; }
 }

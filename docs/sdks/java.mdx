@@ -48,11 +48,12 @@ SfVoiceMediaClient client = new SfVoiceMediaClient(
 import com.sfvoice.media.models.IngestRequest;
 import com.sfvoice.media.models.IngestResponse;
 
-IngestRequest req = IngestRequest.fromUrl("https://storage.example.com/calls/001.mp3")
-    .assetId("call_001")
+IngestRequest req = IngestRequest.fromUrl(
+        "call_001",
+        "https://storage.example.com/calls/001.mp3"
+    )
     .assetClass("customer_acme")
-    .mediaType("audio")
-    .types(List.of("audio", "transcript"))
+    .mediaKind("audio")
     .build();
 
 IngestResponse resp = client.ingest(req);

@@ -6,13 +6,13 @@ description: "Go SDK reference for our media API: idiomatic Go with context.Cont
 ## Install
 
 ```sh
-go get github.com/sf-voice/sf-voice-media-go@v0.1.1
+go get github.com/icelab-research/raidzero/go@v0.1.1
 ```
 
 ## Create a client
 
 ```go
-import sfvoice "github.com/sf-voice/sf-voice-media-go"
+import sfvoice "github.com/icelab-research/raidzero/go"
 
 client := sfvoice.New(
     "https://api.sf-voice.com",
@@ -36,8 +36,7 @@ resp, err := client.Ingest(ctx, &sfvoice.IngestRequest{
     AssetID:    "call_001",
     AssetClass: "customer_acme",
     URL:        "https://storage.example.com/calls/001.mp3",
-    MediaType:  "audio",
-    Types:      []string{"audio", "transcript"},
+    MediaKind:  "audio",
 })
 if err != nil {
     return err

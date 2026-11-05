@@ -15,11 +15,17 @@ from ._wire import (
     build_file_ingest_payload,
     compact_dict,
     decode_response,
+    normalize_ingest_request,
     path_segment,
 )
-from .errors import SfVoiceMediaPollTimeoutError, SfVoiceMediaRequestTimeoutError
+from .errors import (
+    SfVoiceMediaAlertCallbackError,
+    SfVoiceMediaError,
+    SfVoiceMediaPollTimeoutError,
+    SfVoiceMediaRequestTimeoutError,
+)
 from .models import (
-    AlertHandle,
+    AsyncAlertHandle,
     Asset,
     AssetListResponse,
     CreateMonitorRequest,
@@ -32,6 +38,7 @@ from .models import (
     MonitorEventListResponse,
     MonitorListResponse,
     PollTaskOptions,
+    PrefixListResponse,
     SearchRequest,
     SearchResponse,
     Task,
@@ -55,7 +62,7 @@ class AsyncSfVoiceMedia:
         self._timeout_ms = timeout_ms
         self._client = httpx.AsyncClient(
             base_url=self._base_url,
-            headers={"X-API-Key": api_key},
+            headers={"Authorization": f"Bearer {api_key}"},
             timeout=timeout_ms / 1000,
             transport=transport,
         )
@@ -73,15 +80,17 @@ class AsyncSfVoiceMedia:
         """submit media for ingestion from a url, s3 key, or file upload."""
         if request["source"] == "file":
             data, files = build_file_ingest_payload(request)
-            body = await self._request("POST", "/v1/ingest", data=data, files=files)
+            body = await self._request("POST", "/api/v1/ingest", data=data, files=files)
         else:
-            body = await self._request("POST", "/v1/ingest", json=compact_dict(request))
+            body = await self._request(
+                "POST", "/api/v1/ingest", json=normalize_ingest_request(request)
+            )
 
         return IngestResponse.from_dict(body)
 
     async def get_task(self, task_id: str) -> Task:
         """fetch the current state of an ingestion task."""
-        body = await self._request("GET", f"/v1/tasks/{path_segment(task_id)}")
+        body = await self._request("GET", f"/api/v1/tasks/{path_segment(task_id)}")
         return Task.from_dict(body)
 
     async def poll_task(
@@ -112,22 +121,29 @@ class AsyncSfVoiceMedia:
         params: Optional[ListAssetsParams] = None,
     ) -> AssetListResponse:
         """list all assets in the library, paginated."""
-        body = await self._request("GET", "/v1/assets", params=compact_dict(params or {}))
+        body = await self._request(
+            "GET", "/api/v1/assets", params=compact_dict(params or {})
+        )
         return AssetListResponse.from_dict(body)
 
     async def get_asset(self, asset_id: str) -> Asset:
         """fetch one asset by asset_id."""
-        body = await self._request("GET", f"/v1/assets/{path_segment(asset_id)}")
+        body = await self._request("GET", f"/api/v1/assets/{path_segment(asset_id)}")
         return Asset.from_dict(body)
 
     async def delete_asset(self, asset_id: str) -> None:
         """soft-delete an asset."""
-        await self._request("DELETE", f"/v1/assets/{path_segment(asset_id)}")
+        await self._request("DELETE", f"/api/v1/assets/{path_segment(asset_id)}")
 
     async def search(self, request: SearchRequest) -> SearchResponse:
         """run semantic search across indexed media."""
-        body = await self._request("POST", "/v1/search", json=compact_dict(request))
+        body = await self._request("POST", "/api/v1/search", json=compact_dict(request))
         return SearchResponse.from_dict(body)
+
+    async def list_prefixes(self) -> PrefixListResponse:
+        """list native transcript prefixes visible to this api key."""
+        body = await self._request("GET", "/api/v1/prefixes")
+        return PrefixListResponse.from_dict(body)
 
     # ------------------------------------------------------------------
     # monitors
@@ -135,17 +151,21 @@ class AsyncSfVoiceMedia:
 
     async def create_monitor(self, request: CreateMonitorRequest) -> Monitor:
         """create a new monitor."""
-        body = await self._request("POST", "/v1/monitors", json=compact_dict(request))
+        body = await self._request(
+            "POST", "/api/v1/monitors", json=compact_dict(request)
+        )
         return Monitor.from_dict(body)
 
     async def list_monitors(self) -> MonitorListResponse:
         """list all monitors."""
-        body = await self._request("GET", "/v1/monitors")
+        body = await self._request("GET", "/api/v1/monitors")
         return MonitorListResponse.from_dict(body)
 
     async def get_monitor(self, monitor_id: str) -> Monitor:
         """fetch one monitor by id."""
-        body = await self._request("GET", f"/v1/monitors/{path_segment(monitor_id)}")
+        body = await self._request(
+            "GET", f"/api/v1/monitors/{path_segment(monitor_id)}"
+        )
         return Monitor.from_dict(body)
 
     async def update_monitor(
@@ -154,14 +174,14 @@ class AsyncSfVoiceMedia:
         """update a monitor's fields."""
         body = await self._request(
             "PATCH",
-            f"/v1/monitors/{path_segment(monitor_id)}",
+            f"/api/v1/monitors/{path_segment(monitor_id)}",
             json=compact_dict(request),
         )
         return Monitor.from_dict(body)
 
     async def delete_monitor(self, monitor_id: str) -> None:
         """delete a monitor."""
-        await self._request("DELETE", f"/v1/monitors/{path_segment(monitor_id)}")
+        await self._request("DELETE", f"/api/v1/monitors/{path_segment(monitor_id)}")
 
     async def list_monitor_events(
         self,
@@ -171,7 +191,7 @@ class AsyncSfVoiceMedia:
         """list events for a monitor, optionally filtering to matches only."""
         body = await self._request(
             "GET",
-            f"/v1/monitors/{path_segment(monitor_id)}/events",
+            f"/api/v1/monitors/{path_segment(monitor_id)}/events",
             params=compact_dict(params or {}),
         )
         return MonitorEventListResponse.from_dict(body)
@@ -186,10 +206,10 @@ class AsyncSfVoiceMedia:
         asset_class: Optional[str] = None,
         threshold: Optional[float] = None,
         interval_ms: int = 5000,
-    ) -> AlertHandle:
+    ) -> AsyncAlertHandle:
         """create a monitor and poll for matched events in a background task.
 
-        returns an AlertHandle whose stop() cancels the task and deletes the monitor.
+        returns an AsyncAlertHandle whose stop() awaits task and monitor cleanup.
         """
         request: CreateMonitorRequest = {"text": text}
         if slug is not None:
@@ -202,45 +222,98 @@ class AsyncSfVoiceMedia:
             request["threshold"] = threshold
 
         monitor = await self.create_monitor(request)
-        seen: set[str] = set()
+        checkpoint: Optional[str] = None
 
         async def _poll() -> None:
-            try:
-                while True:
-                    try:
-                        resp = await self.list_monitor_events(
-                            monitor.id, {"matched_only": True}
-                        )
-                        for event in resp.items:
-                            if event.id not in seen:
-                                seen.add(event.id)
-                                callback(event)
-                    except asyncio.CancelledError:
+            nonlocal checkpoint
+            consecutive_failures = 0
+            while True:
+                try:
+                    events, next_checkpoint = await self._collect_new_monitor_events(
+                        monitor.id, checkpoint
+                    )
+                    consecutive_failures = 0
+                    for event in events:
+                        try:
+                            callback(event)
+                        except Exception as error:
+                            raise SfVoiceMediaAlertCallbackError(
+                                "alert callback failed"
+                            ) from error
+                    checkpoint = next_checkpoint or checkpoint
+                except asyncio.CancelledError:
+                    raise
+                except Exception as error:
+                    consecutive_failures += 1
+                    retryable = not isinstance(
+                        error, SfVoiceMediaAlertCallbackError
+                    ) and (
+                        not isinstance(error, SfVoiceMediaError)
+                        or error.status == 429
+                        or error.status >= 500
+                    )
+                    if not retryable or consecutive_failures >= 3:
                         raise
-                    except Exception:
-                        pass  # swallow transient errors; next tick will retry
-                    await asyncio.sleep(interval_ms / 1000)
-            except asyncio.CancelledError:
-                return
+                await asyncio.sleep(interval_ms / 1000)
 
         task = asyncio.create_task(_poll())
-        client_ref = self
+        stopped = False
+        stop_lock = asyncio.Lock()
+        stop_error: Optional[BaseException] = None
 
-        async def _safe_delete() -> None:
-            try:
-                await client_ref.delete_monitor(monitor.id)
-            except Exception:
-                pass
+        async def _stop() -> None:
+            nonlocal stopped, stop_error
+            async with stop_lock:
+                if stopped:
+                    if stop_error is not None:
+                        raise stop_error
+                    return
+                stopped = True
+                task.cancel()
+                task_error: Optional[BaseException] = None
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+                except BaseException as error:
+                    task_error = error
+                try:
+                    await self.delete_monitor(monitor.id)
+                except BaseException as error:
+                    stop_error = error
+                stop_error = stop_error or task_error
+                if stop_error is not None:
+                    raise stop_error
 
-        def _stop() -> None:
-            task.cancel()
-            try:
-                loop = asyncio.get_running_loop()
-                loop.create_task(_safe_delete())
-            except RuntimeError:
-                pass
+        return AsyncAlertHandle(monitor_id=monitor.id, _stop=_stop)
 
-        return AlertHandle(monitor_id=monitor.id, _stop=_stop)
+    async def _collect_new_monitor_events(
+        self, monitor_id: str, checkpoint: Optional[str]
+    ) -> tuple[list[MonitorEvent], Optional[str]]:
+        limit = 100
+        offset = 0
+        next_checkpoint: Optional[str] = None
+        pending: list[MonitorEvent] = []
+        seen: set[str] = set()
+
+        for _ in range(1000):
+            response = await self.list_monitor_events(
+                monitor_id,
+                {"matched_only": True, "limit": limit, "offset": offset},
+            )
+            if next_checkpoint is None and response.items:
+                next_checkpoint = response.items[0].id
+            for event in response.items:
+                if event.id == checkpoint:
+                    return list(reversed(pending)), next_checkpoint
+                if event.id not in seen:
+                    seen.add(event.id)
+                    pending.append(event)
+            offset += len(response.items)
+            if len(response.items) < limit or offset >= response.total:
+                return list(reversed(pending)), next_checkpoint
+
+        raise RuntimeError("alert event pagination exceeded 1000 pages")
 
     async def close(self) -> None:
         """close the underlying http session."""

@@ -916,6 +916,7 @@ dependencies = [
 name = "sf_voice_media"
 version = "0.1.1"
 dependencies = [
+ "percent-encoding",
  "reqwest",
  "serde",
  "serde_json",

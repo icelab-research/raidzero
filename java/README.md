@@ -48,8 +48,8 @@ public class Example {
 
         try {
             var ingest = client.ingest(
-                IngestRequest.fromUrl("https://example.com/recording.mp4")
-                    .mediaType("video")
+                IngestRequest.fromUrl("recording-1", "https://example.com/recording.mp4")
+                    .mediaKind("video")
                     .metadata(Map.of("title", "product demo"))
                     .build()
             );
@@ -84,7 +84,14 @@ The client exposes blocking methods:
 - `getAsset(assetId)` - fetch one asset.
 - `deleteAsset(assetId)` - soft-delete an asset.
 - `search(request)` - search indexed media with natural language.
+- `listPrefixes()` - list native transcript prefixes.
+- monitor CRUD plus `listMonitorEvents(...)` - manage queries and page events.
+- `alert(text, callback, options)` - poll matches in a background thread.
+
+Always call `handle.stop()` for an alert. It joins the worker, deletes the
+temporary monitor, and throws any terminal polling or cleanup failure.
 
 ## Examples
 
-- [`../apps/sf-voice/java-example`](../apps/sf-voice/java-example) - Spring Boot REST proxy example.
+- [`../apps/sf-voice/java-example`](../apps/sf-voice/java-example) - Spring Boot
+  REST proxy example.
