@@ -1,3 +1,3 @@
-module github.com/sf-voice/sf-voice-signoz-go
+module github.com/icelab-research/raidzero/go-signoz
 
 go 1.21

@@ -35,14 +35,18 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"maps"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 )
 
 // Defaults applied by Start when the corresponding Config field is zero.
 const (
+	// default metrics interval balances alert latency with export overhead.
 	DefaultMetricsInterval = 15 * time.Second
+	// default profile interval keeps uploads small while preserving useful samples.
 	DefaultProfileInterval = 10 * time.Second
 	defaultHTTPTimeout     = 30 * time.Second
 
@@ -113,12 +117,20 @@ func Start(cfg Config) (*Agent, error) {
 	if cfg.MetricsEndpoint == "" && cfg.ProfilesEndpoint == "" {
 		return nil, fmt.Errorf("signoz: set MetricsEndpoint and/or ProfilesEndpoint")
 	}
+	if err := validateEndpoint("MetricsEndpoint", cfg.MetricsEndpoint); err != nil {
+		return nil, err
+	}
+	if err := validateEndpoint("ProfilesEndpoint", cfg.ProfilesEndpoint); err != nil {
+		return nil, err
+	}
 	if cfg.MetricsInterval <= 0 {
 		cfg.MetricsInterval = DefaultMetricsInterval
 	}
 	if cfg.ProfileInterval <= 0 {
 		cfg.ProfileInterval = DefaultProfileInterval
 	}
+	cfg.MetricsHeaders = maps.Clone(cfg.MetricsHeaders)
+	cfg.Labels = maps.Clone(cfg.Labels)
 
 	client := cfg.HTTPClient
 	if client == nil {
@@ -150,8 +162,28 @@ func (a *Agent) Stop() {
 	a.wg.Wait()
 }
 
+// logf keeps the package prefix consistent for background errors.
 func (a *Agent) logf(format string, args ...any) {
 	a.logger.Printf("signoz: "+format, args...)
+}
+
+// validateEndpoint rejects malformed base URLs before background work starts.
+func validateEndpoint(name, rawURL string) error {
+	if rawURL == "" {
+		return nil
+	}
+
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return fmt.Errorf("signoz: %s is invalid: %w", name, err)
+	}
+	if (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") || parsedURL.Host == "" {
+		return fmt.Errorf("signoz: %s must be an absolute http or https URL", name)
+	}
+	if parsedURL.RawQuery != "" || parsedURL.Fragment != "" {
+		return fmt.Errorf("signoz: %s must not contain a query or fragment", name)
+	}
+	return nil
 }
 
 // sleep blocks for d or until ctx is cancelled. It returns true if the full

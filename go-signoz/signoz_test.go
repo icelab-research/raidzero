@@ -1,41 +1,35 @@
 package signoz
 
 import (
+	"context"
 	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 )
 
+// verifies that the production ratio calculation is bounded and scaled.
 func TestUtilizationClampAndRatio(t *testing.T) {
 	// 1s of CPU over a 2s window on a 2-core box → 0.25.
-	got := ratio(1*time.Second, 2*time.Second, 2)
+	got := utilizationRatio(1, 2, 2)
 	if got != 0.25 {
 		t.Fatalf("ratio = %v, want 0.25", got)
 	}
-	if r := ratio(10*time.Second, 1*time.Second, 1); r != 1 {
+	if r := utilizationRatio(10, 1, 1); r != 1 {
 		t.Fatalf("ratio should clamp to 1, got %v", r)
 	}
-	if r := ratio(-1*time.Second, 1*time.Second, 1); r != 0 {
+	if r := utilizationRatio(-1, 1, 1); r != 0 {
 		t.Fatalf("ratio should clamp to 0, got %v", r)
 	}
+	if r := utilizationRatio(1, 0, 1); r != 0 {
+		t.Fatalf("ratio should be 0 for an invalid wall interval, got %v", r)
+	}
 }
 
-// ratio mirrors cpuSampler.utilization's arithmetic for direct testing.
-func ratio(dCPU, dWall time.Duration, numCPU float64) float64 {
-	if dWall <= 0 || numCPU <= 0 {
-		return 0
-	}
-	u := dCPU.Seconds() / (dWall.Seconds() * numCPU)
-	if u < 0 {
-		return 0
-	}
-	if u > 1 {
-		return 1
-	}
-	return u
-}
-
+// verifies that labels are encoded in a stable order.
 func TestPyroscopeNameEncoding(t *testing.T) {
 	a := &Agent{cfg: Config{ServiceName: "svc", Labels: map[string]string{"env": "prod", "az": "a"}}}
 	if got, want := a.pyroscopeName(), "svc.cpu{az=a,env=prod}"; got != want {
@@ -48,6 +42,7 @@ func TestPyroscopeNameEncoding(t *testing.T) {
 	}
 }
 
+// verifies the minimal OTLP JSON representation used by the exporter.
 func TestOTLPMetricsJSONShape(t *testing.T) {
 	util := 0.42
 	count := "7"
@@ -81,5 +76,84 @@ func TestOTLPMetricsJSONShape(t *testing.T) {
 	// int64 fields must be JSON strings, not numbers.
 	if strings.Contains(out, `"timeUnixNano":1`) {
 		t.Error("timeUnixNano must be encoded as a string per proto3 JSON mapping")
+	}
+}
+
+// verifies that malformed endpoints fail before any goroutine starts.
+func TestStartRejectsInvalidEndpoints(t *testing.T) {
+	testCases := []struct {
+		name     string
+		endpoint string
+	}{
+		{name: "relative", endpoint: "collector:4318"},
+		{name: "unsupported scheme", endpoint: "ftp://collector.example.com"},
+		{name: "missing host", endpoint: "https:///metrics"},
+		{name: "query", endpoint: "https://collector.example.com?token=value"},
+		{name: "fragment", endpoint: "https://collector.example.com#metrics"},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			_, err := Start(Config{ServiceName: "svc", MetricsEndpoint: testCase.endpoint})
+			if err == nil {
+				t.Fatalf("Start accepted invalid endpoint %q", testCase.endpoint)
+			}
+		})
+	}
+}
+
+// verifies that caller mutations cannot race with the running agent.
+func TestStartClonesCallerMaps(t *testing.T) {
+	headers := map[string]string{"authorization": "original"}
+	labels := map[string]string{"env": "production"}
+	agent, err := Start(Config{
+		ServiceName:     "svc",
+		MetricsEndpoint: "https://collector.example.com",
+		MetricsHeaders:  headers,
+		MetricsInterval: time.Hour,
+		Labels:          labels,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer agent.Stop()
+
+	headers["authorization"] = "changed"
+	labels["env"] = "staging"
+	if got := agent.cfg.MetricsHeaders["authorization"]; got != "original" {
+		t.Fatalf("stored header changed with caller map: %q", got)
+	}
+	if got := agent.cfg.Labels["env"]; got != "production" {
+		t.Fatalf("stored label changed with caller map: %q", got)
+	}
+}
+
+// verifies that non-CPU metrics remain available when CPU sampling is disabled.
+func TestExportMetricsWithoutCPU(t *testing.T) {
+	var requestBody []byte
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		var err error
+		requestBody, err = io.ReadAll(request.Body)
+		if err != nil {
+			t.Errorf("read request body: %v", err)
+		}
+		response.WriteHeader(http.StatusAccepted)
+	}))
+	defer server.Close()
+
+	agent := &Agent{
+		cfg:    Config{ServiceName: "svc", MetricsEndpoint: server.URL},
+		client: server.Client(),
+	}
+	if err := agent.exportMetrics(context.Background(), nil); err != nil {
+		t.Fatal(err)
+	}
+
+	body := string(requestBody)
+	if !strings.Contains(body, `"process.runtime.go.goroutines"`) {
+		t.Fatalf("goroutine metric missing from request: %s", body)
+	}
+	if strings.Contains(body, `"process.cpu.utilization"`) {
+		t.Fatalf("CPU metric should be omitted when sampling is unavailable: %s", body)
 	}
 }

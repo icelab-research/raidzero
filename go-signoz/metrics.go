@@ -24,13 +24,17 @@ type cpuSampler struct {
 	numCPU   float64
 }
 
-func newCPUSampler() *cpuSampler {
-	cpu, _ := processCPUTime() // a first-read error surfaces on the next utilization() call
+// newCPUSampler captures a valid baseline before utilization is calculated.
+func newCPUSampler() (*cpuSampler, error) {
+	cpu, err := processCPUTime()
+	if err != nil {
+		return nil, err
+	}
 	return &cpuSampler{
 		lastCPU:  cpu,
 		lastWall: time.Now(),
 		numCPU:   float64(runtime.NumCPU()),
-	}
+	}, nil
 }
 
 // utilization returns CPU utilization in [0,1] since the previous call, where
@@ -46,23 +50,33 @@ func (s *cpuSampler) utilization() (float64, error) {
 	dWall := now.Sub(s.lastWall).Seconds()
 	s.lastCPU, s.lastWall = cpu, now
 
-	if dWall <= 0 || s.numCPU <= 0 {
-		return 0, nil
+	return utilizationRatio(dCPU, dWall, s.numCPU), nil
+}
+
+// utilizationRatio converts CPU and wall deltas into a bounded ratio.
+func utilizationRatio(cpuSeconds, wallSeconds, numCPU float64) float64 {
+	if wallSeconds <= 0 || numCPU <= 0 {
+		return 0
 	}
-	u := dCPU / (dWall * s.numCPU)
-	if u < 0 {
-		u = 0
+	utilization := cpuSeconds / (wallSeconds * numCPU)
+	if utilization < 0 {
+		return 0
 	}
-	if u > 1 {
-		u = 1
+	if utilization > 1 {
+		return 1
 	}
-	return u, nil
+	return utilization
 }
 
 // ── metrics loop ───────────────────────────────────────────────────────────
 
+// runMetrics exports available metrics until the agent is stopped.
 func (a *Agent) runMetrics(ctx context.Context) {
-	sampler := newCPUSampler()
+	sampler, sampleErr := newCPUSampler()
+	cpuSamplingEnabled := sampleErr == nil
+	if sampleErr != nil {
+		a.logf("cpu sampling disabled: %v", sampleErr)
+	}
 	ticker := time.NewTicker(a.cfg.MetricsInterval)
 	defer ticker.Stop()
 
@@ -71,12 +85,17 @@ func (a *Agent) runMetrics(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			util, err := sampler.utilization()
-			if err != nil {
-				a.logf("cpu sample: %v", err)
-				continue
+			var utilization *float64
+			if cpuSamplingEnabled {
+				value, err := sampler.utilization()
+				if err != nil {
+					a.logf("cpu sampling disabled: %v", err)
+					cpuSamplingEnabled = false
+				} else {
+					utilization = &value
+				}
 			}
-			if err := a.exportMetrics(ctx, util); err != nil {
+			if err := a.exportMetrics(ctx, utilization); err != nil {
 				a.logf("metrics export: %v", err)
 			}
 		}
@@ -85,37 +104,38 @@ func (a *Agent) runMetrics(ctx context.Context) {
 
 // exportMetrics POSTs the current CPU utilization (plus goroutine count) to the
 // SigNoz OTLP/HTTP endpoint as an OTLP JSON payload.
-func (a *Agent) exportMetrics(ctx context.Context, util float64) error {
+func (a *Agent) exportMetrics(ctx context.Context, utilization *float64) error {
 	now := strconv.FormatInt(time.Now().UnixNano(), 10)
 	attrs := a.metricAttributes()
 	goroutines := strconv.Itoa(runtime.NumGoroutine())
+	metrics := []otlpMetric{{
+		Name:        "process.runtime.go.goroutines",
+		Unit:        "{goroutine}",
+		Description: "Number of goroutines currently running.",
+		Gauge: &otlpGauge{DataPoints: []otlpNumberDataPoint{{
+			Attributes:   attrs,
+			TimeUnixNano: now,
+			AsInt:        &goroutines,
+		}}},
+	}}
+	if utilization != nil {
+		metrics = append([]otlpMetric{{
+			Name:        "process.cpu.utilization",
+			Unit:        "1",
+			Description: "Process CPU utilization in [0,1], 1.0 = all cores saturated.",
+			Gauge: &otlpGauge{DataPoints: []otlpNumberDataPoint{{
+				Attributes:   attrs,
+				TimeUnixNano: now,
+				AsDouble:     utilization,
+			}}},
+		}}, metrics...)
+	}
 
 	payload := otlpRequest{ResourceMetrics: []otlpResourceMetrics{{
 		Resource: otlpResource{Attributes: a.resourceAttributes()},
 		ScopeMetrics: []otlpScopeMetrics{{
-			Scope: otlpScope{Name: "github.com/sf-voice/sf-voice-signoz-go", Version: "0.1.0"},
-			Metrics: []otlpMetric{
-				{
-					Name:        "process.cpu.utilization",
-					Unit:        "1",
-					Description: "Process CPU utilization in [0,1], 1.0 = all cores saturated.",
-					Gauge: &otlpGauge{DataPoints: []otlpNumberDataPoint{{
-						Attributes:   attrs,
-						TimeUnixNano: now,
-						AsDouble:     &util,
-					}}},
-				},
-				{
-					Name:        "process.runtime.go.goroutines",
-					Unit:        "{goroutine}",
-					Description: "Number of goroutines currently running.",
-					Gauge: &otlpGauge{DataPoints: []otlpNumberDataPoint{{
-						Attributes:   attrs,
-						TimeUnixNano: now,
-						AsInt:        &goroutines,
-					}}},
-				},
-			},
+			Scope:   otlpScope{Name: "github.com/icelab-research/raidzero/go-signoz", Version: "0.1.0"},
+			Metrics: metrics,
 		}},
 	}}}
 
@@ -228,6 +248,7 @@ type otlpAnyV struct {
 	StringValue string `json:"stringValue"`
 }
 
+// stringAttr builds the OTLP representation of a string attribute.
 func stringAttr(k, v string) otlpKV {
 	return otlpKV{Key: k, Value: otlpAnyV{StringValue: v}}
 }

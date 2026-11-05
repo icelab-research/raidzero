@@ -17,9 +17,10 @@ import (
 	"syscall"
 	"time"
 
-	signoz "github.com/sf-voice/sf-voice-signoz-go"
+	signoz "github.com/icelab-research/raidzero/go-signoz"
 )
 
+// main starts a demo agent and creates enough work to produce a useful profile.
 func main() {
 	agent, err := signoz.Start(signoz.Config{
 		ServiceName:       "signoz-go-example",

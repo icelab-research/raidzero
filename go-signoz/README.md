@@ -4,18 +4,20 @@ Zero-dependency Go SDK that ships **CPU profiles** and **CPU-utilization
 metrics** to SigNoz, so SigNoz can flame-graph hot paths and fire a **Slack
 alert when CPU is high**.
 
-```
-import signoz "github.com/sf-voice/sf-voice-signoz-go"
+```go
+import signoz "github.com/icelab-research/raidzero/go-signoz"
 ```
 
 ## What it does
 
-Two independent background loops, started by one call:
+One call starts two independent background loops:
 
-| Loop | Mechanism | Goes to | Answers |
-|------|-----------|---------|---------|
-| **Metrics** | samples process CPU via `getrusage`, exports OTLP/HTTP JSON | SigNoz collector `/v1/metrics` | *Is CPU high?* — the timeseries an alert fires on |
-| **Profiler** | continuous `runtime/pprof` CPU profiles, Pyroscope pprof push | `/ingest` endpoint | *Where is the CPU going?* — flame graphs |
+- **Metrics:** samples process CPU through `getrusage` and exports OTLP/HTTP
+  JSON to the SigNoz collector's `/v1/metrics` endpoint. This answers whether
+  CPU usage is high and provides the timeseries used by alerts.
+- **Profiler:** continuously captures `runtime/pprof` CPU profiles and pushes
+  them to the Pyroscope-compatible `/ingest` endpoint. This produces flame
+  graphs that show where CPU time is spent.
 
 > **The SDK never talks to Slack.** A flame graph can't be threshold-alerted,
 > so the metric is what makes "Slack on high CPU" possible. The Slack message
@@ -26,13 +28,15 @@ Two independent background loops, started by one call:
 ```go
 agent, err := signoz.Start(signoz.Config{
     ServiceName:     "sf-voice-api",
-    MetricsEndpoint: "https://ingest.us.signoz.cloud:443",     // or http://localhost:4318
-    MetricsHeaders:  map[string]string{"signoz-ingestion-key": os.Getenv("SIGNOZ_KEY")},
+    MetricsEndpoint: "https://ingest.us.signoz.cloud:443",
+    MetricsHeaders: map[string]string{
+        "signoz-ingestion-key": os.Getenv("SIGNOZ_KEY"),
+    },
 
-    ProfilesEndpoint:  "http://localhost:4040",                // Pyroscope / SigNoz profiling ingest
-    ProfilesAuthToken: os.Getenv("PYROSCOPE_TOKEN"),           // optional, sent as Bearer
+    ProfilesEndpoint:  "http://localhost:4040",
+    ProfilesAuthToken: os.Getenv("PYROSCOPE_TOKEN"),
 
-    Labels: map[string]string{"env": "prod", "region": "sfo"}, // attached to metrics + profiles
+    Labels: map[string]string{"env": "prod", "region": "sfo"},
 })
 if err != nil {
     log.Fatal(err)
@@ -48,10 +52,12 @@ A runnable demo (burns a core so the metric climbs) lives in `./example`.
 
 ## Metrics emitted
 
-| OTLP name | In SigNoz (dots → underscores) | Type | Meaning |
-|-----------|-------------------------------|------|---------|
-| `process.cpu.utilization` | `process_cpu_utilization` | gauge, `[0,1]` | 1.0 = every core saturated (`ΔCPU / (Δwall · nCPU)`) |
-| `process.runtime.go.goroutines` | `process_runtime_go_goroutines` | gauge | live goroutine count |
+- `process.cpu.utilization` becomes `process_cpu_utilization` in SigNoz. It is
+  a `[0,1]` gauge where `1.0` means every core is saturated. Its calculation is
+  `ΔCPU / (Δwall · nCPU)`.
+- `process.runtime.go.goroutines` becomes
+  `process_runtime_go_goroutines` in SigNoz. It reports the live goroutine
+  count as a gauge.
 
 ## Wiring "high CPU → Slack" in SigNoz (config, not code)
 
@@ -59,7 +65,8 @@ A runnable demo (burns a core so the metric climbs) lives in `./example`.
    Cloud: the regional ingest URL + `signoz-ingestion-key` header (shown above).
 2. **Confirm the metric.** SigNoz → *Metrics* and search `process_cpu_utilization`.
 3. **Create the alert.** *Alerts → New Alert → Metrics-based*:
-   - Metric `process_cpu_utilization`, aggregation **avg** (or `p95`), grouped by `host_name`.
+   - Metric `process_cpu_utilization`, aggregation **avg** (or `p95`), grouped
+     by `host_name`.
    - Condition: **above `0.85` for 5m** (utilization is `0–1`, so `0.85` = 85%).
 4. **Add a Slack channel.** *Settings → Alert Channels → New → Slack*, paste an
    [incoming webhook](https://api.slack.com/messaging/webhooks) URL, pick the channel.
@@ -88,7 +95,8 @@ or at SigNoz's profiling ingest if your deployment exposes one.
 - **Release:** Go modules publish by **git tag**, not a registry upload. Tag the
   commit `go-signoz/vX.Y.Z` and push it; `.github/workflows/publish-go-signoz-sdk.yml`
   re-verifies (vet/test/build) and asks the Go proxy to index the version. You
-  can also run it manually via *workflow_dispatch* with a `version` input.
+  can also run it manually via *workflow_dispatch* by selecting the matching
+  `go-signoz/vX.Y.Z` tag and entering `X.Y.Z` as the `version` input.
 
   ```sh
   git tag go-signoz/v0.1.0
@@ -96,9 +104,8 @@ or at SigNoz's profiling ingest if your deployment exposes one.
   ```
 
   > The proxy-index step is best-effort: `go get
-  > github.com/sf-voice/sf-voice-signoz-go@vX.Y.Z` only resolves once that module
-  > path is reachable at its own repo / vanity import (same setup as the sibling
-  > `go/` SDK). The monorepo `go-signoz/vX.Y.Z` tag is what the workflow gates.
+  > github.com/icelab-research/raidzero/go-signoz@vX.Y.Z` resolves from the
+  > monorepo's `go-signoz/vX.Y.Z` tag.
 
 ## Platform support
 
