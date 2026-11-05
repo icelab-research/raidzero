@@ -7,7 +7,7 @@ name: sf-voice-${PREVIEW_ID}
 
 services:
   frontend:
-    image: ghcr.io/sf-voice/sf-voice-frontend:${FRONTEND_IMAGE_TAG}
+    image: ghcr.io/icelab-research/raidzero/frontend:${FRONTEND_IMAGE_TAG}
     container_name: ${PREVIEW_ID}-frontend
     restart: unless-stopped
     expose:
@@ -21,7 +21,7 @@ services:
       retries: 6
 
   api:
-    image: ghcr.io/sf-voice/sf-voice-api:${API_IMAGE_TAG}
+    image: ghcr.io/icelab-research/raidzero/api:${API_IMAGE_TAG}
     container_name: ${PREVIEW_ID}-api
     restart: unless-stopped
     env_file:

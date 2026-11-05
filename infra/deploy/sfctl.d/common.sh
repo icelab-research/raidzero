@@ -76,8 +76,8 @@ image_var() {
 
 image_ref() {
   case "$1" in
-    ellie) echo "ghcr.io/sf-voice/ellie-ai" ;;
-    resto) echo "ghcr.io/sf-voice/restaurant-booking-app" ;;
+    ellie) echo "ghcr.io/icelab-research/raidzero/ellie-ai" ;;
+    resto) echo "ghcr.io/icelab-research/raidzero/restaurant-booking-app" ;;
     *) die "$1 does not have an image" ;;
   esac
 }

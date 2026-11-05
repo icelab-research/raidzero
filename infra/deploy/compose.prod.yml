@@ -9,7 +9,7 @@ name: sf-voice-apps
 
 services:
   ellie-ai:
-    image: ghcr.io/sf-voice/ellie-ai:${ELLIE_IMAGE_TAG:-latest}
+    image: ghcr.io/icelab-research/raidzero/ellie-ai:${ELLIE_IMAGE_TAG:-latest}
     container_name: ellie-ai
     restart: unless-stopped
     env_file:
@@ -28,7 +28,7 @@ services:
       - proxy_net
 
   resto-demo:
-    image: ghcr.io/sf-voice/restaurant-booking-app:${RESTO_IMAGE_TAG:-latest}
+    image: ghcr.io/icelab-research/raidzero/restaurant-booking-app:${RESTO_IMAGE_TAG:-latest}
     container_name: resto-demo
     restart: unless-stopped
     env_file:
