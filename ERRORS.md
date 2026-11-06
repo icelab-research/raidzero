@@ -27,3 +27,8 @@
 **What didn't work:** The core pre-commit hook reached the frontend Rsbuild step and did not exit on two separate isolated worktrees, even after Rust formatting, clippy, and nextest had passed.
 **What worked:** Stop only the Rsbuild process owned by the isolated worktree, run the relevant checks directly, then commit with `--no-verify` and rely on the pull request CI for the full gate.
 **Note for next time:** Do not terminate user-owned build processes. Match the process path to the isolated worktree before stopping it.
+
+## Core frontend migration started from a stale checkout
+**What didn't work:** The frontend migration was developed in a `core/` GitButler workspace roughly 90 commits behind `origin/main`, so it omitted newer routes and product work. Editing the `CLAUDE.md`/`AGENTS.md` pair in place also replaced a required symlink with a regular file.
+**What worked:** Compare the core checkout with `origin/main` and the parent submodule pin before editing, then create a clean worktree from current `origin/main`. Check symlinks with `ls -l` and edit their real target.
+**Note for next time:** Never reconcile a stale GitButler workspace by replaying its whole tree. Preserve it first, then port only documentation-aligned changes onto current main.
