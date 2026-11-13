@@ -3,13 +3,13 @@
    "name": "RaidZero",
    "theme": "linden",
    "colors": {
-      "primary": "#5E6AD2",
+      "primary": "#020202",
       "light": "#8b93e8",
       "dark": "#4f5bd5"
    },
    "background": {
       "color": {
-         "dark": "#0a0a0b"
+         "dark": "#010101"
       },
       "decoration": "grid"
    },
