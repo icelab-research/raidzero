@@ -4,8 +4,8 @@
    "theme": "linden",
    "colors": {
       "primary": "#020202",
-      "light": "#8b93e8",
-      "dark": "#4f5bd5"
+      "light": "#767DC1",
+      "dark": "#1A1A1A"
    },
    "background": {
       "color": {
