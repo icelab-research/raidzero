@@ -1,6 +1,6 @@
 {
    "$schema": "https://mintlify.com/docs.json",
-   "name": "San Francisco Voice Company",
+   "name": "RaidZero",
    "theme": "linden",
    "colors": {
       "primary": "#5E6AD2",
@@ -78,5 +78,6 @@
             "pages": ["changelog"]
          }
       ]
-   }
+  },
+  "description": "RaidZero is the observability stack for rich media applications, with multi-modal embedding search we enable state of art observability to help organisations ship and protect their product with confidence."
 }
