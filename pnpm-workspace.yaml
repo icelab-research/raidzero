@@ -1,8 +1,2 @@
-# parent workspace: sdk + prototype apps only.
-# core/frontend has its own pnpm workspace in core/pnpm-workspace.yaml.
 packages:
   - "ts/sdk"
-  - "apps/fraud-prototype"
-  - "apps/fifteenlabs"
-allowBuilds:
-  esbuild: true

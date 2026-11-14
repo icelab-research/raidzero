@@ -1,4 +1,0 @@
-[submodule "core"]
-	path = core
-	url = git@github.com:icelab-research/core.git
-	branch = main
