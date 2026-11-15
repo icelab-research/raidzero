@@ -1,6 +1,6 @@
-# Raidzero SDKs and documentation
+# RaidZero SDKs and documentation
 
-Client libraries for the San Francisco Voice Company media API.
+Client libraries for RaidZero, a media observability product by [Ice Lab](https://icelab.sh).
 
 | SDK | Source |
 | --- | --- |
