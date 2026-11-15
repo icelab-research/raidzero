@@ -4,7 +4,7 @@ version = "0.1.1"
 edition = "2021"
 description = "Async Rust client for the San Francisco Voice Company API"
 license = "MIT"
-repository = "https://github.com/icelab-research/raidzero"
+repository = "https://github.com/icelab-research/icelab"
 keywords = ["media", "video", "audio", "api", "client"]
 categories = ["api-bindings", "multimedia"]
 

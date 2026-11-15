@@ -33,12 +33,12 @@
    "navbar": {
       "primary": {
          "type": "github",
-         "href": "https://github.com/icelab-research/raidzero"
+         "href": "https://github.com/icelab-research/icelab"
       }
    },
    "footer": {
       "socials": {
-         "github": "https://github.com/icelab-research/raidzero",
+         "github": "https://github.com/icelab-research/icelab",
          "discord": "https://discord.sf-voice.sh",
          "linkedin": "https://www.linkedin.com/company/sf-model/"
       }

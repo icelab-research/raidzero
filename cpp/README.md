@@ -11,7 +11,7 @@ Depends on `nlohmann_json` and `cpr`.
 include(FetchContent)
 FetchContent_Declare(
   sf_voice
-  GIT_REPOSITORY https://github.com/icelab-research/raidzero
+  GIT_REPOSITORY https://github.com/icelab-research/icelab
   GIT_TAG        main
   SOURCE_SUBDIR  cpp
 )

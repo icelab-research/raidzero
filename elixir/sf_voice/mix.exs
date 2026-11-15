@@ -2,7 +2,7 @@ defmodule SfVoiceMedia.MixProject do
   use Mix.Project
 
   @version "0.1.1"
-  @source_url "https://github.com/icelab-research/raidzero"
+  @source_url "https://github.com/icelab-research/icelab"
 
   @doc """
   Defines the Mix project configuration for the `:sf_voice` application.
