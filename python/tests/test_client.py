@@ -3,12 +3,12 @@ import unittest
 
 import httpx
 
-from sf_voice import (
-    AsyncSfVoiceMedia,
-    SfVoiceMedia,
-    SfVoiceMediaError,
-    SfVoiceMediaPollTimeoutError,
-    SfVoiceMediaRequestTimeoutError,
+from raidzero import (
+    AsyncRaidzeroMedia,
+    RaidzeroMedia,
+    RaidzeroMediaError,
+    RaidzeroMediaPollTimeoutError,
+    RaidzeroMediaRequestTimeoutError,
 )
 
 
@@ -45,7 +45,7 @@ def _monitor_event(event_id: str) -> dict:
     }
 
 
-class SfVoiceMediaClientTests(unittest.TestCase):
+class RaidzeroMediaClientTests(unittest.TestCase):
     def test_ingest_url_sends_request_object(self) -> None:
         seen = {}
 
@@ -56,7 +56,7 @@ class SfVoiceMediaClientTests(unittest.TestCase):
             seen["body"] = json.loads(request.read())
             return httpx.Response(202, json=_ingest_response())
 
-        client = SfVoiceMedia(
+        client = RaidzeroMedia(
             base_url=API_BASE_URL,
             api_key="sk_test",
             transport=httpx.MockTransport(handler),
@@ -100,7 +100,7 @@ class SfVoiceMediaClientTests(unittest.TestCase):
             seen["body"] = request.read()
             return httpx.Response(202, json=_ingest_response())
 
-        client = SfVoiceMedia(
+        client = RaidzeroMedia(
             base_url=API_BASE_URL,
             api_key="sk_test",
             transport=httpx.MockTransport(handler),
@@ -135,7 +135,7 @@ class SfVoiceMediaClientTests(unittest.TestCase):
             seen["body"] = json.loads(request.read())
             return httpx.Response(202, json=_ingest_response())
 
-        client = SfVoiceMedia(
+        client = RaidzeroMedia(
             base_url=API_BASE_URL,
             api_key="sk_test",
             transport=httpx.MockTransport(handler),
@@ -181,7 +181,7 @@ class SfVoiceMediaClientTests(unittest.TestCase):
                 },
             )
 
-        client = SfVoiceMedia(
+        client = RaidzeroMedia(
             base_url=API_BASE_URL,
             api_key="sk_test",
             transport=httpx.MockTransport(handler),
@@ -221,7 +221,7 @@ class SfVoiceMediaClientTests(unittest.TestCase):
             seen["path"] = request.url.raw_path.decode("ascii")
             return httpx.Response(200, json=_task_response())
 
-        client = SfVoiceMedia(
+        client = RaidzeroMedia(
             base_url=API_BASE_URL,
             api_key="sk_test",
             transport=httpx.MockTransport(handler),
@@ -238,13 +238,13 @@ class SfVoiceMediaClientTests(unittest.TestCase):
                 json={"error": {"code": "not_found", "message": "missing asset"}},
             )
 
-        client = SfVoiceMedia(
+        client = RaidzeroMedia(
             base_url=API_BASE_URL,
             api_key="sk_test",
             transport=httpx.MockTransport(handler),
         )
 
-        with self.assertRaises(SfVoiceMediaError) as raised:
+        with self.assertRaises(RaidzeroMediaError) as raised:
             client.get_asset("video_123")
 
         self.assertEqual(raised.exception.code, "not_found")
@@ -255,14 +255,14 @@ class SfVoiceMediaClientTests(unittest.TestCase):
         def handler(request: httpx.Request) -> httpx.Response:
             raise httpx.ReadTimeout("slow", request=request)
 
-        client = SfVoiceMedia(
+        client = RaidzeroMedia(
             base_url=API_BASE_URL,
             api_key="sk_test",
             timeout_ms=50,
             transport=httpx.MockTransport(handler),
         )
 
-        with self.assertRaises(SfVoiceMediaRequestTimeoutError) as raised:
+        with self.assertRaises(RaidzeroMediaRequestTimeoutError) as raised:
             client.get_task("task_123")
 
         self.assertEqual(raised.exception.timeout_ms, 50)
@@ -271,13 +271,13 @@ class SfVoiceMediaClientTests(unittest.TestCase):
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(200, json=_task_response(status="pending"))
 
-        client = SfVoiceMedia(
+        client = RaidzeroMedia(
             base_url=API_BASE_URL,
             api_key="sk_test",
             transport=httpx.MockTransport(handler),
         )
 
-        with self.assertRaises(SfVoiceMediaPollTimeoutError) as raised:
+        with self.assertRaises(RaidzeroMediaPollTimeoutError) as raised:
             client.poll_task("task_123", {"interval_ms": 1, "timeout_ms": 2})
 
         self.assertEqual(raised.exception.task_id, "task_123")
@@ -297,7 +297,7 @@ class SfVoiceMediaClientTests(unittest.TestCase):
                 json={"items": newest_first[offset : offset + 100], "total": 150},
             )
 
-        client = SfVoiceMedia(
+        client = RaidzeroMedia(
             base_url=API_BASE_URL,
             api_key="sk_test",
             transport=httpx.MockTransport(handler),
@@ -315,7 +315,7 @@ class SfVoiceMediaClientTests(unittest.TestCase):
         )
 
 
-class AsyncSfVoiceMediaClientTests(unittest.IsolatedAsyncioTestCase):
+class AsyncRaidzeroMediaClientTests(unittest.IsolatedAsyncioTestCase):
     async def test_async_ingest_url_sends_request_object(self) -> None:
         seen = {}
 
@@ -323,7 +323,7 @@ class AsyncSfVoiceMediaClientTests(unittest.IsolatedAsyncioTestCase):
             seen["body"] = json.loads(request.read())
             return httpx.Response(202, json=_ingest_response())
 
-        async with AsyncSfVoiceMedia(
+        async with AsyncRaidzeroMedia(
             base_url=API_BASE_URL,
             api_key="sk_test",
             transport=httpx.MockTransport(handler),
@@ -362,7 +362,7 @@ class AsyncSfVoiceMediaClientTests(unittest.IsolatedAsyncioTestCase):
                 json={"items": newest_first[offset : offset + 100], "total": 150},
             )
 
-        async with AsyncSfVoiceMedia(
+        async with AsyncRaidzeroMedia(
             base_url=API_BASE_URL,
             api_key="sk_test",
             transport=httpx.MockTransport(handler),

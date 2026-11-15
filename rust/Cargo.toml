@@ -1,8 +1,8 @@
 [package]
-name = "sf_voice_media"
-version = "0.1.1"
+name = "raidzero_media"
+version = "0.2.1"
 edition = "2021"
-description = "Async Rust client for the San Francisco Voice Company API"
+description = "Async Rust client for the Raidzero API"
 license = "MIT"
 repository = "https://github.com/icelab-research/icelab"
 keywords = ["media", "video", "audio", "api", "client"]

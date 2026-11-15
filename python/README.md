@@ -1,13 +1,13 @@
-# sf-voice-media
+# raidzero-media
 
-Python SDK for the sf-voice media API.
+Python SDK for the raidzero media API.
 
-Version: `0.2.0`
+Version: `0.2.1`
 
 ## Installation
 
 ```sh
-pip install sf-voice-media==0.2.0
+pip install raidzero-media==0.2.1
 ```
 
 For local development in this repo:
@@ -16,12 +16,12 @@ For local development in this repo:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
-python3 -m compileall -q sf_voice
+python3 -m compileall -q raidzero
 ```
 
 ## Requirements
 
-- An sf-voice API key.
+- A Raidzero API key.
 - The media API base URL.
 
 ## Client Setup
@@ -29,11 +29,11 @@ python3 -m compileall -q sf_voice
 ```python
 import os
 
-from sf_voice import SfVoiceMedia
+from raidzero import RaidzeroMedia
 
-client = SfVoiceMedia(
-    base_url="https://api.sf-voice.com",
-    api_key=os.environ["SF_VOICE_API_KEY"],
+client = RaidzeroMedia(
+    base_url="https://api.raidzero.icu",
+    api_key=os.environ["RAIDZERO_API_KEY"],
     timeout_ms=30_000,
 )
 ```
@@ -53,11 +53,11 @@ client = SfVoiceMedia(
 ```python
 import os
 
-from sf_voice import SfVoiceMedia, SfVoiceMediaError
+from raidzero import RaidzeroMedia, RaidzeroMediaError
 
-client = SfVoiceMedia(
-    base_url="https://api.sf-voice.com",
-    api_key=os.environ["SF_VOICE_API_KEY"],
+client = RaidzeroMedia(
+    base_url="https://api.raidzero.icu",
+    api_key=os.environ["RAIDZERO_API_KEY"],
 )
 
 try:
@@ -95,7 +95,7 @@ try:
     )
 
     print(search.results)
-except SfVoiceMediaError as error:
+except RaidzeroMediaError as error:
     print(error.code, error.status, error.message)
     raise
 finally:
@@ -189,11 +189,11 @@ client.delete_asset("video_123")
 ```python
 import os
 
-from sf_voice import AsyncSfVoiceMedia
+from raidzero import AsyncRaidzeroMedia
 
-async with AsyncSfVoiceMedia(
-    base_url="https://api.sf-voice.com",
-    api_key=os.environ["SF_VOICE_API_KEY"],
+async with AsyncRaidzeroMedia(
+    base_url="https://api.raidzero.icu",
+    api_key=os.environ["RAIDZERO_API_KEY"],
 ) as client:
     ingest = await client.ingest(
         {
@@ -207,24 +207,24 @@ async with AsyncSfVoiceMedia(
 
 ## Errors
 
-Every non-2xx API response raises `SfVoiceMediaError`.
+Every non-2xx API response raises `RaidzeroMediaError`.
 
 ```python
-from sf_voice import SfVoiceMediaError
+from raidzero import RaidzeroMediaError
 
 try:
     client.search({"query": "pricing", "asset_class": "customer_acme"})
-except SfVoiceMediaError as error:
+except RaidzeroMediaError as error:
     print(error.code)
     print(error.status)
     print(error.message)
     raise
 ```
 
-`SfVoiceMediaRequestTimeoutError` is raised when a single HTTP request exceeds
+`RaidzeroMediaRequestTimeoutError` is raised when a single HTTP request exceeds
 the client timeout.
 
-`SfVoiceMediaPollTimeoutError` is raised when `poll_task` exceeds its polling
+`RaidzeroMediaPollTimeoutError` is raised when `poll_task` exceeds its polling
 timeout before the task reaches `"ready"` or `"failed"`.
 
 ## API Surface

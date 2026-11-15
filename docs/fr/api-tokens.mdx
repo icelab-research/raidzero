@@ -24,10 +24,10 @@ Vous pouvez créer autant de jetons que nécessaire et en révoquer un sans touc
     Cliquez sur **Créer un jeton**. Un jeton intitulé `default` est généré et révélé dans la fenêtre.
   </Step>
   <Step title="Installer le SDK">
-    Copiez la commande `pnpm add @sf-voice/media` et exécutez-la dans votre projet.
+    Copiez la commande `pnpm add @raidzero/media` et exécutez-la dans votre projet.
   </Step>
   <Step title="Ingérer votre premier appel">
-    Copiez l'extrait de démarrage, collez votre jeton dans `SF_VOICE_TOKEN` et exécutez-le.
+    Copiez l'extrait de démarrage, collez votre jeton dans `RAIDZERO_TOKEN` et exécutez-le.
   </Step>
 </Steps>
 
@@ -62,19 +62,19 @@ Les jetons dont la date d'expiration est passée sont marqués **Expiré** et ce
 Définissez le jeton dans une variable d'environnement et passez-la au client SDK. Ne committez jamais de jetons.
 
 ```ts
-import { SfVoiceMedia } from "@sf-voice/media";
+import { RaidzeroMedia } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
 });
 ```
 
 Si vous appelez l'API REST directement, envoyez le jeton dans l'en-tête `X-API-Key` :
 
 ```sh
-curl https://api.sf-voice.com/api/v1/assets \
-  -H "X-API-Key: $SF_VOICE_API_KEY"
+curl https://api.raidzero.icu/api/v1/assets \
+  -H "X-API-Key: $RAIDZERO_API_KEY"
 ```
 
 Un jeton invalide ou révoqué renvoie le code d'erreur `unauthorized`. Voir l'[aperçu du SDK](/sdks/overview) pour la table complète des erreurs.

@@ -1,10 +1,10 @@
-// Package sfvoice provides a client for the sf-voice media API.
+// Package raidzero provides a client for the raidzero media API.
 //
 // Quick start:
 //
-//	client := sfvoice.New("https://api.sf-voice.com", os.Getenv("SF_VOICE_API_KEY"))
+//	client := raidzero.New("https://api.raidzero.icu", os.Getenv("RAIDZERO_API_KEY"))
 //
-//	resp, err := client.Ingest(ctx, sfvoice.IngestRequest{
+//	resp, err := client.Ingest(ctx, raidzero.IngestRequest{
 //	    Source: "url",
 //	    URL:    "https://example.com/call.mp4",
 //	})
@@ -12,7 +12,7 @@
 //	    log.Fatal(err)
 //	}
 //	fmt.Println(resp.TaskID)
-package sfvoice
+package raidzero
 
 import (
 	"bytes"
@@ -28,7 +28,7 @@ import (
 	"time"
 )
 
-// Client is the sf-voice media API client.
+// Client is the raidzero media API client.
 // It is safe for concurrent use; create one and reuse it.
 type Client struct {
 	baseURL    string
@@ -38,7 +38,7 @@ type Client struct {
 
 // New creates a client.
 //
-// baseURL should not have a trailing slash (e.g. "https://api.sf-voice.com").
+// baseURL should not have a trailing slash (e.g. "https://api.raidzero.icu").
 // apiKey is sent as a bearer token on every request.
 func New(baseURL, apiKey string) *Client {
 	return &Client{
@@ -63,14 +63,14 @@ func (c *Client) do(ctx context.Context, method, path string, body any, out any)
 	if body != nil {
 		b, err := json.Marshal(body)
 		if err != nil {
-			return fmt.Errorf("sfvoice: marshal request: %w", err)
+			return fmt.Errorf("raidzero: marshal request: %w", err)
 		}
 		bodyReader = bytes.NewReader(b)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, c.baseURL+path, bodyReader)
 	if err != nil {
-		return fmt.Errorf("sfvoice: build request: %w", err)
+		return fmt.Errorf("raidzero: build request: %w", err)
 	}
 
 	req.Header.Set("Authorization", "Bearer "+c.apiKey)
@@ -80,7 +80,7 @@ func (c *Client) do(ctx context.Context, method, path string, body any, out any)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("sfvoice: http: %w", err)
+		return fmt.Errorf("raidzero: http: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -90,7 +90,7 @@ func (c *Client) do(ctx context.Context, method, path string, body any, out any)
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("sfvoice: read response: %w", err)
+		return fmt.Errorf("raidzero: read response: %w", err)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -105,7 +105,7 @@ func (c *Client) do(ctx context.Context, method, path string, body any, out any)
 
 	if out != nil {
 		if err := json.Unmarshal(respBody, out); err != nil {
-			return fmt.Errorf("sfvoice: decode response: %w", err)
+			return fmt.Errorf("raidzero: decode response: %w", err)
 		}
 	}
 	return nil

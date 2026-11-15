@@ -1,5 +1,5 @@
 """
-Conan 2 recipe for sf_voice — header-only C++17 helper for the sf-voice media API.
+Conan 2 recipe for raidzero — header-only C++17 helper for the raidzero media API.
 
 This is provided for convenience if you already use Conan. It is not published
 to any remote registry. Use it locally or via CMake FetchContent instead.
@@ -16,13 +16,13 @@ from conan.tools.files import copy
 import os
 
 
-class SfVoiceMediaConan(ConanFile):
-    name        = "sf_voice"
-    version     = "0.1.1"
+class RaidzeroMediaConan(ConanFile):
+    name        = "raidzero"
+    version     = "0.2.1"
     license     = "MIT"
-    description = "Header-only C++17 helper for the sf-voice media API"
+    description = "Header-only C++17 helper for the raidzero media API"
     url         = "https://github.com/icelab-research/icelab"
-    homepage    = "https://sf-voice.com"
+    homepage    = "https://raidzero.icu"
     topics      = ("media", "video", "audio", "http", "header-only")
 
     # header-only: no compiler/os/arch settings needed
@@ -65,13 +65,13 @@ class SfVoiceMediaConan(ConanFile):
         Configure package metadata for consumers of this header-only library.
         
         Clears runtime and library directories so there are no binaries or linkable libraries, and sets the CMake integration properties:
-        - `cmake_file_name` to "sf_voice"
-        - `cmake_target_name` to "sf_voice::sf_voice"
+        - `cmake_file_name` to "raidzero"
+        - `cmake_target_name` to "raidzero::raidzero"
         """
         self.cpp_info.bindirs  = []
         self.cpp_info.libdirs  = []
-        self.cpp_info.set_property("cmake_file_name",   "sf_voice")
-        self.cpp_info.set_property("cmake_target_name", "sf_voice::sf_voice")
+        self.cpp_info.set_property("cmake_file_name",   "raidzero")
+        self.cpp_info.set_property("cmake_target_name", "raidzero::raidzero")
 
     def package_id(self):
         # header-only packages are abi-independent

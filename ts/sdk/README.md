@@ -1,51 +1,51 @@
-# @sf-voice/media
+# @raidzero/media
 
-TypeScript SDK for the sf-voice media API.
+TypeScript SDK for the raidzero media API.
 
-Version: `0.1.2`
+Version: `0.2.1`
 
 ## Installation
 
 ```sh
-pnpm add @sf-voice/media@latest
+pnpm add @raidzero/media@latest
 ```
 
 ```sh
-npm install @sf-voice/media@latest
+npm install @raidzero/media@latest
 ```
 
 ```sh
-bun install @sf-voice/media@latest
+bun install @raidzero/media@latest
 ```
 
 ## Requirements
 
-- An sf-voice API key.
+- A Raidzero API key.
 - The media API base URL.
 - A runtime with `fetch`, `FormData`, and `Blob` support.
 
 ## Client Setup
 
 ```ts
-import { SfVoiceMedia } from "@sf-voice/media";
+import { RaidzeroMedia } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  apiKey: process.env.RAIDZERO_API_KEY!,
 });
 ```
 
 | Option      | Required | Description                                                                                                    |
 | ----------- | -------: | -------------------------------------------------------------------------------------------------------------- |
 | `apiKey`    |      yes | API key sent as an `Authorization: Bearer` token.                                                              |
-| `baseUrl`   |       no | Base URL for the sf-voice media API. Defaults to `SF_VOICE_BASE_URL` env var, then `https://api.sf-voice.com`. |
+| `baseUrl`   |       no | Base URL for the raidzero media API. Defaults to `RAIDZERO_BASE_URL` env var, then `https://api.raidzero.icu`. |
 | `timeoutMs` |       no | Per-request timeout in milliseconds. Defaults to `30_000`.                                                     |
 
 To point the client at a local server, set
-`SF_VOICE_BASE_URL=http://localhost:8080` in your environment — no code change
+`RAIDZERO_BASE_URL=http://localhost:8080` in your environment — no code change
 needed. Or pass it explicitly:
 
 ```ts
-const client = new SfVoiceMedia({
+const client = new RaidzeroMedia({
   apiKey: "...",
   baseUrl: "http://localhost:8080",
 });
@@ -64,10 +64,10 @@ const client = new SfVoiceMedia({
 ## Quickstart
 
 ```ts
-import { SfVoiceMedia, SfVoiceMediaError } from "@sf-voice/media";
+import { RaidzeroMedia, RaidzeroMediaError } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  apiKey: process.env.RAIDZERO_API_KEY!,
 });
 
 try {
@@ -103,7 +103,7 @@ try {
 
   console.log(search.results);
 } catch (error) {
-  if (error instanceof SfVoiceMediaError) {
+  if (error instanceof RaidzeroMediaError) {
     console.error(error.code, error.status, error.message);
   }
   throw error;
@@ -146,7 +146,7 @@ Source-specific fields:
 | Source | Required Fields    | Description                                               |
 | ------ | ------------------ | --------------------------------------------------------- |
 | `url`  | `url`              | Ingest from a public or backend-accessible URL.           |
-| `s3`   | `s3_key`           | Ingest from an S3 key already connected to sf-voice.      |
+| `s3`   | `s3_key`           | Ingest from an S3 key already connected to raidzero.      |
 | `file` | `file`, `filename` | Upload a `Blob`, `ArrayBuffer`, or `Uint8Array` directly. |
 
 ### URL Ingest
@@ -382,7 +382,7 @@ Example:
       "start_ms": 42000,
       "end_ms": 58000,
       "match_type": "transcript",
-      "thumbnail_url": "https://api.sf-voice.com/assets/video_123/thumb.jpg"
+      "thumbnail_url": "https://api.raidzero.icu/assets/video_123/thumb.jpg"
     }
   ],
   "page_info": {
@@ -449,10 +449,10 @@ type Asset = {
 
 ## Errors
 
-Every non-2xx API response throws `SfVoiceMediaError`.
+Every non-2xx API response throws `RaidzeroMediaError`.
 
 ```ts
-import { SfVoiceMediaError } from "@sf-voice/media";
+import { RaidzeroMediaError } from "@raidzero/media";
 
 try {
   await client.search({
@@ -460,7 +460,7 @@ try {
     asset_class: "customer_acme",
   });
 } catch (error) {
-  if (error instanceof SfVoiceMediaError) {
+  if (error instanceof RaidzeroMediaError) {
     console.error(error.code);
     console.error(error.status);
     console.error(error.message);
@@ -481,10 +481,10 @@ Known API error codes include:
 - `not_found`
 - `rate_limited`
 
-`SfVoiceMediaRequestTimeoutError` is thrown when a single HTTP request exceeds
+`RaidzeroMediaRequestTimeoutError` is thrown when a single HTTP request exceeds
 the client timeout.
 
-`SfVoiceMediaPollTimeoutError` is thrown when `pollTask` exceeds its polling
+`RaidzeroMediaPollTimeoutError` is thrown when `pollTask` exceeds its polling
 timeout before the task reaches `"ready"` or `"failed"`.
 
 ## API Surface

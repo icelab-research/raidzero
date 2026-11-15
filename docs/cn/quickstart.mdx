@@ -1,6 +1,6 @@
 ---
 title: "快速开始"
-description: "安装 TypeScript SDK,摄取一个视频或音频资产,等待索引完成,并对 sf-voice media API 运行你的第一次范围化搜索。"
+description: "安装 TypeScript SDK,摄取一个视频或音频资产,等待索引完成,并对 raidzero media API 运行你的第一次范围化搜索。"
 icon: "rocket"
 ---
 
@@ -10,26 +10,26 @@ icon: "rocket"
 
 <CodeGroup>
 ```sh pnpm
-pnpm add @sf-voice/media@latest
+pnpm add @raidzero/media@latest
 ```
 
 ```sh npm
-npm install @sf-voice/media@latest
+npm install @raidzero/media@latest
 ```
 
 ```sh bun
-bun install @sf-voice/media@latest
+bun install @raidzero/media@latest
 ```
 </CodeGroup>
 
 ## 1. 创建客户端
 
 ```ts
-import { SfVoiceMedia } from "@sf-voice/media";
+import { RaidzeroMedia } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
 });
 ```
 
@@ -95,11 +95,11 @@ console.log(search.results);
 ## 完整示例
 
 ```ts
-import { SfVoiceMedia, SfVoiceMediaError } from "@sf-voice/media";
+import { RaidzeroMedia, RaidzeroMediaError } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
 });
 
 try {
@@ -126,7 +126,7 @@ try {
 
   console.log(search.results);
 } catch (error) {
-  if (error instanceof SfVoiceMediaError) {
+  if (error instanceof RaidzeroMediaError) {
     console.error(error.code, error.status, error.message);
   }
   throw error;

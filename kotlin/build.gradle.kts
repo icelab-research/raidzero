@@ -5,8 +5,8 @@ plugins {
     `maven-publish`
 }
 
-group = "sh.sf-voice"
-version = "0.1.1"
+group = "icu.raidzero"
+version = "0.2.1"
 
 repositories {
     mavenCentral()
@@ -33,12 +33,12 @@ java {
 publishing {
     publications {
         create<MavenPublication>("maven") {
-            artifactId = "sf-voice-media-kotlin"
+            artifactId = "raidzero-media-kotlin"
             from(components["java"])
 
             pom {
-                name.set("sf-voice-media-kotlin")
-                description.set("Kotlin SDK for the sf-voice media API")
+                name.set("raidzero-media-kotlin")
+                description.set("Kotlin SDK for the raidzero media API")
                 url.set("https://github.com/icelab-research/icelab")
                 licenses {
                     license {
@@ -48,8 +48,8 @@ publishing {
                 }
                 developers {
                     developer {
-                        id.set("sf-voice")
-                        name.set("sf-voice")
+                        id.set("raidzero")
+                        name.set("raidzero")
                     }
                 }
                 scm {

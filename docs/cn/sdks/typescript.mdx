@@ -1,10 +1,10 @@
 ---
 title: "TypeScript SDK"
-description: "@sf-voice/media TypeScript SDK 参考:创建客户端、摄取资产、轮询索引任务,并在视频、音频和转录文本中搜索。"
+description: "@raidzero/media TypeScript SDK 参考:创建客户端、摄取资产、轮询索引任务,并在视频、音频和转录文本中搜索。"
 icon: "code"
 ---
 
-`@sf-voice/media` SDK 为 TypeScript 应用封装了 sf-voice media API。
+`@raidzero/media` SDK 为 TypeScript 应用封装了 raidzero media API。
 使用它可以提交媒体资产、等待索引,并使用你自己的面向客户的资产 ID 在视频、
 音频和转录文本维度中进行搜索。
 
@@ -21,10 +21,10 @@ icon: "code"
 </Columns>
 
 <Note>
-  SDK 仅暴露 sf-voice 的术语。与具体提供方相关的映射在后端进行。
+  SDK 仅暴露 raidzero 的术语。与具体提供方相关的映射在后端进行。
 </Note>
 
-<Card title="第一次使用 sf-voice media?" icon="sparkles" href="/cn/introduction">
+<Card title="第一次使用 raidzero media?" icon="sparkles" href="/cn/introduction">
   在使用 SDK 参考之前,先从产品概览开始。
 </Card>
 
@@ -32,33 +32,33 @@ icon: "code"
 
 <CodeGroup>
 ```sh pnpm
-pnpm add @sf-voice/media@latest
+pnpm add @raidzero/media@latest
 ```
 
 ```sh npm
-npm install @sf-voice/media@latest
+npm install @raidzero/media@latest
 ```
 
 ```sh bun
-bun install @sf-voice/media@latest
+bun install @raidzero/media@latest
 ```
 </CodeGroup>
 
 ## 创建客户端
 
 ```ts
-import { SfVoiceMedia } from "@sf-voice/media";
+import { RaidzeroMedia } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
   timeoutMs: 30_000,
 });
 ```
 
 | 选项 | 必填 | 说明 |
 | --- | ---: | --- |
-| `baseUrl` | 是 | sf-voice media API 的基础 URL。 |
+| `baseUrl` | 是 | raidzero media API 的基础 URL。 |
 | `apiKey` | 是 | 你的 `sk_live_...` 密钥，以 `Authorization: Bearer` 请求头发送。 |
 | `timeoutMs` | 否 | 每次请求的超时时间(毫秒)。默认为 `30_000`。 |
 
@@ -172,7 +172,7 @@ const client = new SfVoiceMedia({
 | 来源 | 必填字段 | 说明 |
 | --- | --- | --- |
 | `url` | `url` | 从公开或后端可访问的 URL 摄取。 |
-| `s3` | `s3_key` | 从已连接到 sf-voice 的 S3 键摄取。 |
+| `s3` | `s3_key` | 从已连接到 raidzero 的 S3 键摄取。 |
 | `file` | `file`、`filename` | 直接上传 `Blob`、`ArrayBuffer` 或 `Uint8Array`。 |
 
 ### 示例
@@ -347,7 +347,7 @@ type SearchResponse = {
       "start_ms": 42000,
       "end_ms": 58000,
       "match_type": "transcript",
-      "thumbnail_url": "https://api.sf-voice.com/assets/video_123/thumb.jpg"
+      "thumbnail_url": "https://api.raidzero.icu/assets/video_123/thumb.jpg"
     }
   ],
   "page_info": {
@@ -386,10 +386,10 @@ type Asset = {
 
 ## 错误
 
-每个非 2xx 的 API 响应都会抛出 `SfVoiceMediaError`。
+每个非 2xx 的 API 响应都会抛出 `RaidzeroMediaError`。
 
 ```ts
-import { SfVoiceMediaError } from "@sf-voice/media";
+import { RaidzeroMediaError } from "@raidzero/media";
 
 try {
   await client.search({
@@ -397,7 +397,7 @@ try {
     asset_class: "customer_acme",
   });
 } catch (error) {
-  if (error instanceof SfVoiceMediaError) {
+  if (error instanceof RaidzeroMediaError) {
     console.error(error.code);
     console.error(error.status);
     console.error(error.message);
@@ -406,7 +406,7 @@ try {
 }
 ```
 
-当单次 HTTP 请求超过客户端超时时,会抛出 `SfVoiceMediaRequestTimeoutError`。
+当单次 HTTP 请求超过客户端超时时,会抛出 `RaidzeroMediaRequestTimeoutError`。
 
 当 `pollTask` 在任务到达 `"ready"` 或 `"failed"` 之前超过其轮询超时时,会抛出
-`SfVoiceMediaPollTimeoutError`。
+`RaidzeroMediaPollTimeoutError`。

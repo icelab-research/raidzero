@@ -1,7 +1,7 @@
 import {
-  SfVoiceMediaError,
-  SfVoiceMediaPollTimeoutError,
-  SfVoiceMediaRequestTimeoutError,
+  RaidzeroMediaError,
+  RaidzeroMediaPollTimeoutError,
+  RaidzeroMediaRequestTimeoutError,
 } from "./errors.js";
 import type {
   AlertHandle,
@@ -74,20 +74,20 @@ function toUploadBlob(
     : new Blob([bytes]);
 }
 
-const DEFAULT_BASE_URL = "https://api.sf-voice.com";
+const DEFAULT_BASE_URL = "https://api.raidzero.icu";
 
-// reads SF_VOICE_BASE_URL from the environment when available (node / edge runtimes).
+// reads RAIDZERO_BASE_URL from the environment when available (node / edge runtimes).
 // falls back to the production URL so browser bundles work without any config.
 function resolveBaseUrl(explicit?: string): string {
   if (explicit) return explicit;
-  if (typeof process !== "undefined" && process.env?.SF_VOICE_BASE_URL) {
-    return process.env.SF_VOICE_BASE_URL;
+  if (typeof process !== "undefined" && process.env?.RAIDZERO_BASE_URL) {
+    return process.env.RAIDZERO_BASE_URL;
   }
   return DEFAULT_BASE_URL;
 }
 
-export type SfVoiceMediaOptions = {
-  /** base URL of the media API. defaults to SF_VOICE_BASE_URL env var, then "https://api.sf-voice.com". */
+export type RaidzeroMediaOptions = {
+  /** base URL of the media API. defaults to RAIDZERO_BASE_URL env var, then "https://api.raidzero.icu". */
   baseUrl?: string;
   /** API key sent as a bearer token */
   apiKey: string;
@@ -96,21 +96,21 @@ export type SfVoiceMediaOptions = {
 };
 
 /**
- * SDK client for the sf-voice media API.
+ * SDK client for the raidzero media API.
  *
  * @example
  * ```ts
- * const client = new SfVoiceMedia({
- *   apiKey: process.env.SF_VOICE_API_KEY!,
+ * const client = new RaidzeroMedia({
+ *   apiKey: process.env.RAIDZERO_API_KEY!,
  * });
  * ```
  */
-export class SfVoiceMedia {
+export class RaidzeroMedia {
   private readonly baseUrl: string;
   private readonly headers: Record<string, string>;
   private readonly timeoutMs: number;
 
-  constructor({ baseUrl, apiKey, timeoutMs = 30_000 }: SfVoiceMediaOptions) {
+  constructor({ baseUrl, apiKey, timeoutMs = 30_000 }: RaidzeroMediaOptions) {
     // strip trailing slash so every path concat is predictable
     this.baseUrl = resolveBaseUrl(baseUrl).replace(/\/$/, "");
     this.headers = {
@@ -123,7 +123,7 @@ export class SfVoiceMedia {
 
   /**
    * executes a fetch and unwraps the JSON body.
-   * throws SfVoiceMediaError on any non-2xx status.
+   * throws RaidzeroMediaError on any non-2xx status.
    *
    * returns `null` for 204 No Content responses.
    */
@@ -162,7 +162,7 @@ export class SfVoiceMedia {
       res = await fetch(url, init);
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
-        throw new SfVoiceMediaRequestTimeoutError(this.timeoutMs);
+        throw new RaidzeroMediaRequestTimeoutError(this.timeoutMs);
       }
       throw err;
     } finally {
@@ -180,7 +180,7 @@ export class SfVoiceMedia {
       json = await res.json();
     } catch {
       // non-JSON body on an error status
-      throw new SfVoiceMediaError(
+      throw new RaidzeroMediaError(
         "provider_unavailable",
         `unexpected non-JSON response from server (HTTP ${res.status})`,
         res.status,
@@ -189,7 +189,7 @@ export class SfVoiceMedia {
 
     if (!res.ok) {
       const errBody = json as ApiErrorBody;
-      throw new SfVoiceMediaError(
+      throw new RaidzeroMediaError(
         errBody?.error?.code ?? "provider_unavailable",
         errBody?.error?.message ?? `request failed with status ${res.status}`,
         res.status,
@@ -381,7 +381,7 @@ export class SfVoiceMedia {
    * polls `getTask` at a fixed interval until the task reaches
    * `"ready"` or `"failed"`, then returns the final Task object.
    *
-   * throws `SfVoiceMediaPollTimeoutError` if `timeoutMs` is exceeded
+   * throws `RaidzeroMediaPollTimeoutError` if `timeoutMs` is exceeded
    * before a terminal state is reached.
    *
    * @example
@@ -406,7 +406,7 @@ export class SfVoiceMedia {
       }
 
       if (Date.now() + intervalMs > deadline) {
-        throw new SfVoiceMediaPollTimeoutError(taskId, timeoutMs);
+        throw new RaidzeroMediaPollTimeoutError(taskId, timeoutMs);
       }
 
       await sleep(intervalMs);
@@ -558,7 +558,7 @@ export class SfVoiceMedia {
       } catch (error) {
         consecutiveFailures += 1;
         const retryable =
-          !(error instanceof SfVoiceMediaError) ||
+          !(error instanceof RaidzeroMediaError) ||
           error.status === 429 ||
           error.status >= 500;
         if (!retryable || consecutiveFailures >= 3) {

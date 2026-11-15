@@ -1,10 +1,10 @@
 ---
 title: "SDK TypeScript"
-description: "Référence du SDK TypeScript @sf-voice/media : créez un client, ingérez des ressources, interrogez les tâches et recherchez vidéo, audio et transcriptions."
+description: "Référence du SDK TypeScript @raidzero/media : créez un client, ingérez des ressources, interrogez les tâches et recherchez vidéo, audio et transcriptions."
 icon: "code"
 ---
 
-Le SDK `@sf-voice/media` enveloppe l'API sf-voice media pour les applications TypeScript.
+Le SDK `@raidzero/media` enveloppe l'API raidzero media pour les applications TypeScript.
 Utilisez-le pour soumettre des actifs médias, attendre l'indexation et rechercher à travers les surfaces vidéo, audio
 et transcription avec vos propres identifiants d'actifs orientés client.
 
@@ -21,10 +21,10 @@ et transcription avec vos propres identifiants d'actifs orientés client.
 </Columns>
 
 <Note>
-  Le SDK n'expose que les termes sf-voice. Le mappage spécifique au fournisseur a lieu dans le backend.
+  Le SDK n'expose que les termes raidzero. Le mappage spécifique au fournisseur a lieu dans le backend.
 </Note>
 
-<Card title="Nouveau sur sf-voice media ?" icon="sparkles" href="/fr/introduction">
+<Card title="Nouveau sur raidzero media ?" icon="sparkles" href="/fr/introduction">
   Commencez par la vue d'ensemble du produit avant d'utiliser la référence du SDK.
 </Card>
 
@@ -32,33 +32,33 @@ et transcription avec vos propres identifiants d'actifs orientés client.
 
 <CodeGroup>
 ```sh pnpm
-pnpm add @sf-voice/media@latest
+pnpm add @raidzero/media@latest
 ```
 
 ```sh npm
-npm install @sf-voice/media@latest
+npm install @raidzero/media@latest
 ```
 
 ```sh bun
-bun install @sf-voice/media@latest
+bun install @raidzero/media@latest
 ```
 </CodeGroup>
 
 ## Créer un client
 
 ```ts
-import { SfVoiceMedia } from "@sf-voice/media";
+import { RaidzeroMedia } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
   timeoutMs: 30_000,
 });
 ```
 
 | Option | Requis | Description |
 | --- | ---: | --- |
-| `baseUrl` | Oui | URL de base pour l'API sf-voice media. |
+| `baseUrl` | Oui | URL de base pour l'API raidzero media. |
 | `apiKey` | Oui | Votre clé `sk_live_...`, envoyée comme en-tête `Authorization: Bearer`. |
 | `timeoutMs` | Non | Délai d'expiration par requête en millisecondes. Par défaut `30_000`. |
 
@@ -172,7 +172,7 @@ Champs spécifiques à la source :
 | Source | Champs requis | Description |
 | --- | --- | --- |
 | `url` | `url` | Ingérer depuis une URL publique ou accessible par le backend. |
-| `s3` | `s3_key` | Ingérer depuis une clé S3 déjà connectée à sf-voice. |
+| `s3` | `s3_key` | Ingérer depuis une clé S3 déjà connectée à raidzero. |
 | `file` | `file`, `filename` | Téléverser directement un `Blob`, `ArrayBuffer` ou `Uint8Array`. |
 
 ### Exemples
@@ -347,7 +347,7 @@ type SearchResponse = {
       "start_ms": 42000,
       "end_ms": 58000,
       "match_type": "transcript",
-      "thumbnail_url": "https://api.sf-voice.com/assets/video_123/thumb.jpg"
+      "thumbnail_url": "https://api.raidzero.icu/assets/video_123/thumb.jpg"
     }
   ],
   "page_info": {
@@ -386,10 +386,10 @@ type Asset = {
 
 ## Erreurs
 
-Chaque réponse API non-2xx déclenche `SfVoiceMediaError`.
+Chaque réponse API non-2xx déclenche `RaidzeroMediaError`.
 
 ```ts
-import { SfVoiceMediaError } from "@sf-voice/media";
+import { RaidzeroMediaError } from "@raidzero/media";
 
 try {
   await client.search({
@@ -397,7 +397,7 @@ try {
     asset_class: "customer_acme",
   });
 } catch (error) {
-  if (error instanceof SfVoiceMediaError) {
+  if (error instanceof RaidzeroMediaError) {
     console.error(error.code);
     console.error(error.status);
     console.error(error.message);
@@ -406,8 +406,8 @@ try {
 }
 ```
 
-`SfVoiceMediaRequestTimeoutError` est levée lorsqu'une requête HTTP unique dépasse
+`RaidzeroMediaRequestTimeoutError` est levée lorsqu'une requête HTTP unique dépasse
 le délai d'expiration du client.
 
-`SfVoiceMediaPollTimeoutError` est levée lorsque `pollTask` dépasse son délai d'expiration
+`RaidzeroMediaPollTimeoutError` est levée lorsque `pollTask` dépasse son délai d'expiration
 avant que la tâche n'atteigne `"ready"` ou `"failed"`.

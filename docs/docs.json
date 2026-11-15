@@ -1,6 +1,6 @@
 {
    "$schema": "https://mintlify.com/docs.json",
-   "name": "San Francisco Voice Company",
+   "name": "Raidzero",
    "theme": "linden",
    "colors": {
       "primary": "#5E6AD2",
@@ -39,7 +39,7 @@
    "footer": {
       "socials": {
          "github": "https://github.com/icelab-research/icelab",
-         "discord": "https://discord.sf-voice.sh",
+         "discord": "https://discord.raidzero.sh",
          "linkedin": "https://www.linkedin.com/company/sf-model/"
       }
    },
@@ -62,6 +62,7 @@
                "sdks/overview",
                "sdks/observability",
                "sdks/typescript",
+               "sdks/python",
                "sdks/elixir",
                "sdks/java",
                "sdks/kotlin",

@@ -1,11 +1,11 @@
-// barrel export — public surface of @sf-voice/media
+// barrel export — public surface of @raidzero/media
 
-export { SfVoiceMedia } from "./client.js";
-export type { SfVoiceMediaOptions } from "./client.js";
+export { RaidzeroMedia } from "./client.js";
+export type { RaidzeroMediaOptions } from "./client.js";
 export {
-  SfVoiceMediaError,
-  SfVoiceMediaPollTimeoutError,
-  SfVoiceMediaRequestTimeoutError,
+  RaidzeroMediaError,
+  RaidzeroMediaPollTimeoutError,
+  RaidzeroMediaRequestTimeoutError,
 } from "./errors.js";
 export type {
   AlertHandle,

@@ -1,10 +1,10 @@
 ---
 title: "SDK TypeScript"
-description: "Riferimento per l'SDK TypeScript @sf-voice/media: crea un client, ingerisci asset, esegui il polling dei task e cerca tra video, audio e trascrizioni."
+description: "Riferimento per l'SDK TypeScript @raidzero/media: crea un client, ingerisci asset, esegui il polling dei task e cerca tra video, audio e trascrizioni."
 icon: "code"
 ---
 
-L'SDK `@sf-voice/media` incapsula l'API sf-voice media per le applicazioni TypeScript.
+L'SDK `@raidzero/media` incapsula l'API raidzero media per le applicazioni TypeScript.
 Usalo per inviare asset multimediali, attendere l'indicizzazione e cercare tra le superfici video, audio
 e trascrizione con i tuoi ID di asset rivolti ai clienti.
 
@@ -21,10 +21,10 @@ e trascrizione con i tuoi ID di asset rivolti ai clienti.
 </Columns>
 
 <Note>
-  L'SDK espone solo la terminologia di sf-voice. La mappatura specifica del provider avviene nel backend.
+  L'SDK espone solo la terminologia di raidzero. La mappatura specifica del provider avviene nel backend.
 </Note>
 
-<Card title="Nuovo su sf-voice media?" icon="sparkles" href="/it/introduction">
+<Card title="Nuovo su raidzero media?" icon="sparkles" href="/it/introduction">
   Inizia con la panoramica del prodotto prima di usare il riferimento dell'SDK.
 </Card>
 
@@ -32,33 +32,33 @@ e trascrizione con i tuoi ID di asset rivolti ai clienti.
 
 <CodeGroup>
 ```sh pnpm
-pnpm add @sf-voice/media@latest
+pnpm add @raidzero/media@latest
 ```
 
 ```sh npm
-npm install @sf-voice/media@latest
+npm install @raidzero/media@latest
 ```
 
 ```sh bun
-bun install @sf-voice/media@latest
+bun install @raidzero/media@latest
 ```
 </CodeGroup>
 
 ## Crea un client
 
 ```ts
-import { SfVoiceMedia } from "@sf-voice/media";
+import { RaidzeroMedia } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
   timeoutMs: 30_000,
 });
 ```
 
 | Opzione | Obbligatorio | Descrizione |
 | --- | ---: | --- |
-| `baseUrl` | Sì | URL base dell'API sf-voice media. |
+| `baseUrl` | Sì | URL base dell'API raidzero media. |
 | `apiKey` | Sì | La tua chiave `sk_live_...`, inviata come header `Authorization: Bearer`. |
 | `timeoutMs` | No | Timeout per richiesta in millisecondi. Predefinito `30_000`. |
 
@@ -172,7 +172,7 @@ Campi specifici della sorgente:
 | Sorgente | Campi obbligatori | Descrizione |
 | --- | --- | --- |
 | `url` | `url` | Ingerire da un URL pubblico o accessibile dal backend. |
-| `s3` | `s3_key` | Ingerire da una chiave S3 già collegata a sf-voice. |
+| `s3` | `s3_key` | Ingerire da una chiave S3 già collegata a raidzero. |
 | `file` | `file`, `filename` | Caricare direttamente un `Blob`, `ArrayBuffer` o `Uint8Array`. |
 
 ### Esempi
@@ -347,7 +347,7 @@ type SearchResponse = {
       "start_ms": 42000,
       "end_ms": 58000,
       "match_type": "transcript",
-      "thumbnail_url": "https://api.sf-voice.com/assets/video_123/thumb.jpg"
+      "thumbnail_url": "https://api.raidzero.icu/assets/video_123/thumb.jpg"
     }
   ],
   "page_info": {
@@ -386,10 +386,10 @@ type Asset = {
 
 ## Errori
 
-Ogni risposta API non 2xx genera `SfVoiceMediaError`.
+Ogni risposta API non 2xx genera `RaidzeroMediaError`.
 
 ```ts
-import { SfVoiceMediaError } from "@sf-voice/media";
+import { RaidzeroMediaError } from "@raidzero/media";
 
 try {
   await client.search({
@@ -397,7 +397,7 @@ try {
     asset_class: "customer_acme",
   });
 } catch (error) {
-  if (error instanceof SfVoiceMediaError) {
+  if (error instanceof RaidzeroMediaError) {
     console.error(error.code);
     console.error(error.status);
     console.error(error.message);
@@ -406,8 +406,8 @@ try {
 }
 ```
 
-`SfVoiceMediaRequestTimeoutError` viene generato quando una singola richiesta HTTP supera
+`RaidzeroMediaRequestTimeoutError` viene generato quando una singola richiesta HTTP supera
 il timeout del client.
 
-`SfVoiceMediaPollTimeoutError` viene generato quando `pollTask` supera il proprio timeout di polling
+`RaidzeroMediaPollTimeoutError` viene generato quando `pollTask` supera il proprio timeout di polling
 prima che il task raggiunga `"ready"` o `"failed"`.

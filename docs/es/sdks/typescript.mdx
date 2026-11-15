@@ -1,10 +1,10 @@
 ---
 title: "SDK de TypeScript"
-description: "Referencia del SDK TypeScript @sf-voice/media: crea un cliente, ingiere recursos, sondea tareas de indexación y busca en vídeo, audio y transcripciones."
+description: "Referencia del SDK TypeScript @raidzero/media: crea un cliente, ingiere recursos, sondea tareas de indexación y busca en vídeo, audio y transcripciones."
 icon: "code"
 ---
 
-El SDK `@sf-voice/media` envuelve la API de sf-voice media para aplicaciones TypeScript.
+El SDK `@raidzero/media` envuelve la API de raidzero media para aplicaciones TypeScript.
 Úsalo para enviar recursos multimedia, esperar a la indexación y buscar en superficies de vídeo, audio
 y transcripción con tus propios ID de recursos orientados al cliente.
 
@@ -21,10 +21,10 @@ y transcripción con tus propios ID de recursos orientados al cliente.
 </Columns>
 
 <Note>
-  El SDK solo expone términos de sf-voice. El mapeo específico del proveedor ocurre en el backend.
+  El SDK solo expone términos de raidzero. El mapeo específico del proveedor ocurre en el backend.
 </Note>
 
-<Card title="¿Nuevo en sf-voice media?" icon="sparkles" href="/es/introduction">
+<Card title="¿Nuevo en raidzero media?" icon="sparkles" href="/es/introduction">
   Empieza con la visión general del producto antes de usar la referencia del SDK.
 </Card>
 
@@ -32,33 +32,33 @@ y transcripción con tus propios ID de recursos orientados al cliente.
 
 <CodeGroup>
 ```sh pnpm
-pnpm add @sf-voice/media@latest
+pnpm add @raidzero/media@latest
 ```
 
 ```sh npm
-npm install @sf-voice/media@latest
+npm install @raidzero/media@latest
 ```
 
 ```sh bun
-bun install @sf-voice/media@latest
+bun install @raidzero/media@latest
 ```
 </CodeGroup>
 
 ## Crear un cliente
 
 ```ts
-import { SfVoiceMedia } from "@sf-voice/media";
+import { RaidzeroMedia } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
   timeoutMs: 30_000,
 });
 ```
 
 | Opción | Obligatorio | Descripción |
 | --- | ---: | --- |
-| `baseUrl` | Sí | URL base de la API de sf-voice media. |
+| `baseUrl` | Sí | URL base de la API de raidzero media. |
 | `apiKey` | Sí | Tu clave `sk_live_...`, enviada como cabecera `Authorization: Bearer`. |
 | `timeoutMs` | No | Tiempo de espera por solicitud en milisegundos. Por defecto `30_000`. |
 
@@ -172,7 +172,7 @@ Campos específicos de la fuente:
 | Fuente | Campos obligatorios | Descripción |
 | --- | --- | --- |
 | `url` | `url` | Ingerir desde una URL pública o accesible desde el backend. |
-| `s3` | `s3_key` | Ingerir desde una clave de S3 ya conectada a sf-voice. |
+| `s3` | `s3_key` | Ingerir desde una clave de S3 ya conectada a raidzero. |
 | `file` | `file`, `filename` | Subir un `Blob`, `ArrayBuffer` o `Uint8Array` directamente. |
 
 ### Ejemplos
@@ -347,7 +347,7 @@ type SearchResponse = {
       "start_ms": 42000,
       "end_ms": 58000,
       "match_type": "transcript",
-      "thumbnail_url": "https://api.sf-voice.com/assets/video_123/thumb.jpg"
+      "thumbnail_url": "https://api.raidzero.icu/assets/video_123/thumb.jpg"
     }
   ],
   "page_info": {
@@ -386,10 +386,10 @@ type Asset = {
 
 ## Errores
 
-Cada respuesta de API no 2xx lanza `SfVoiceMediaError`.
+Cada respuesta de API no 2xx lanza `RaidzeroMediaError`.
 
 ```ts
-import { SfVoiceMediaError } from "@sf-voice/media";
+import { RaidzeroMediaError } from "@raidzero/media";
 
 try {
   await client.search({
@@ -397,7 +397,7 @@ try {
     asset_class: "customer_acme",
   });
 } catch (error) {
-  if (error instanceof SfVoiceMediaError) {
+  if (error instanceof RaidzeroMediaError) {
     console.error(error.code);
     console.error(error.status);
     console.error(error.message);
@@ -406,8 +406,8 @@ try {
 }
 ```
 
-`SfVoiceMediaRequestTimeoutError` se lanza cuando una solicitud HTTP individual supera
+`RaidzeroMediaRequestTimeoutError` se lanza cuando una solicitud HTTP individual supera
 el tiempo de espera del cliente.
 
-`SfVoiceMediaPollTimeoutError` se lanza cuando `pollTask` supera su tiempo de espera de sondeo
+`RaidzeroMediaPollTimeoutError` se lanza cuando `pollTask` supera su tiempo de espera de sondeo
 antes de que la tarea alcance `"ready"` o `"failed"`.

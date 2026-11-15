@@ -102,7 +102,7 @@ header#navbar a[data-slot="context-menu-trigger"] {
 }
 
 header#navbar a[data-slot="context-menu-trigger"]::after {
-   content: "San Francisco Voice Company";
+   content: "Raidzero";
    font-size: 13px;
    font-weight: 600;
    letter-spacing: -0.02em;

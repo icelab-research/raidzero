@@ -1,6 +1,6 @@
 /**
- * all public types for the @sf-voice/media SDK.
- * mirrors the shapes returned by the sf-voice media API.
+ * all public types for the @raidzero/media SDK.
+ * mirrors the shapes returned by the raidzero media API.
  */
 
 // ─── shared ──────────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 ---
 title: "Avvio rapido"
-description: "Installa l'SDK TypeScript, ingerisci un asset video o audio, attendi l'indicizzazione ed esegui la tua prima ricerca con ambito su sf-voice media."
+description: "Installa l'SDK TypeScript, ingerisci un asset video o audio, attendi l'indicizzazione ed esegui la tua prima ricerca con ambito su raidzero media."
 icon: "rocket"
 ---
 
@@ -10,26 +10,26 @@ Questa guida ti porta dalla chiave API al primo risultato di ricerca con l'SDK T
 
 <CodeGroup>
 ```sh pnpm
-pnpm add @sf-voice/media@latest
+pnpm add @raidzero/media@latest
 ```
 
 ```sh npm
-npm install @sf-voice/media@latest
+npm install @raidzero/media@latest
 ```
 
 ```sh bun
-bun install @sf-voice/media@latest
+bun install @raidzero/media@latest
 ```
 </CodeGroup>
 
 ## 1. Crea un client
 
 ```ts
-import { SfVoiceMedia } from "@sf-voice/media";
+import { RaidzeroMedia } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
 });
 ```
 
@@ -96,11 +96,11 @@ console.log(search.results);
 ## Esempio completo
 
 ```ts
-import { SfVoiceMedia, SfVoiceMediaError } from "@sf-voice/media";
+import { RaidzeroMedia, RaidzeroMediaError } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
 });
 
 try {
@@ -127,7 +127,7 @@ try {
 
   console.log(search.results);
 } catch (error) {
-  if (error instanceof SfVoiceMediaError) {
+  if (error instanceof RaidzeroMediaError) {
     console.error(error.code, error.status, error.message);
   }
   throw error;

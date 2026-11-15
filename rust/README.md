@@ -1,19 +1,19 @@
-# sf_voice_media
+# raidzero_media
 
-Async Rust SDK for the sf-voice media API.
+Async Rust SDK for the raidzero media API.
 
-Version: `0.1.1`
+Version: `0.2.1`
 
 ## Installation
 
 ```sh
-cargo add sf_voice_media@0.1.1
+cargo add raidzero_media@0.2.1
 ```
 
 For local development in this repo:
 
 ```sh
-cargo test -p sf_voice_media
+cargo test -p raidzero_media
 ```
 
 ## Usage
@@ -21,16 +21,16 @@ cargo test -p sf_voice_media
 ```rust
 use std::time::Duration;
 
-use sf_voice_media::{
+use raidzero_media::{
     types::{IngestRequest, MediaMetadata, MediaType, SearchRequest, SearchType},
-    SfVoiceMedia,
+    RaidzeroMedia,
 };
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = SfVoiceMedia::new(
-        "https://api.sf-voice.com",
-        std::env::var("SF_VOICE_API_KEY")?,
+    let client = RaidzeroMedia::new(
+        "https://api.raidzero.icu",
+        std::env::var("RAIDZERO_API_KEY")?,
     );
 
     let ingest = client

@@ -4,7 +4,7 @@ description: "了解终端的生命周期:摄取资产、索引视频和转录�
 icon: "workflow"
 ---
 
-sf-voice media 只有一个核心循环:提交一个资产,等待索引,然后
+raidzero media 只有一个核心循环:提交一个资产,等待索引,然后
 使用应用程序已经在使用的同一组 ID 与范围,搜索已索引的媒体。
 
 ```mermaid
@@ -92,7 +92,7 @@ const task = await client.pollTask(ingest.task_id);
 
 ## 6. 后端提供方细节保持隐藏
 
-SDK 仅暴露 sf-voice 的概念:
+SDK 仅暴露 raidzero 的概念:
 
 - `asset_id`
 - `asset_class`

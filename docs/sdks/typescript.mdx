@@ -1,36 +1,36 @@
 ---
 title: "TypeScript"
-description: "@sf-voice/media TypeScript SDK reference: create a client, ingest assets, poll indexing tasks, and search video, audio, and transcripts."
+description: "@raidzero/media TypeScript SDK reference: create a client, ingest assets, poll indexing tasks, and search video, audio, and transcripts."
 ---
 
-`@sf-voice/media` — requires a runtime with `fetch`, `FormData`, and `Blob`.
+`@raidzero/media` — requires a runtime with `fetch`, `FormData`, and `Blob`.
 
-Current version: `0.1.2`. Pin it while the API is moving.
+Current version: `0.2.1`. Pin it while the API is moving.
 
 ## Install
 
 <CodeGroup>
 ```sh pnpm
-pnpm add @sf-voice/media@0.1.2
+pnpm add @raidzero/media@0.2.1
 ```
 
 ```sh npm
-npm install @sf-voice/media@0.1.2
+npm install @raidzero/media@0.2.1
 ```
 
 ```sh bun
-bun add @sf-voice/media@0.1.2
+bun add @raidzero/media@0.2.1
 ```
 </CodeGroup>
 
 ## Create a client
 
 ```ts
-import { SfVoiceMedia } from "@sf-voice/media";
+import { RaidzeroMedia } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
 });
 ```
 
@@ -125,7 +125,7 @@ if (task.status === "failed") {
 }
 ```
 
-`pollTask` throws `SfVoiceMediaPollTimeoutError` if the task doesn't reach `ready` or `failed` within the timeout.
+`pollTask` throws `RaidzeroMediaPollTimeoutError` if the task doesn't reach `ready` or `failed` within the timeout.
 
 ### Check once
 
@@ -246,12 +246,12 @@ type Asset = {
 ## Errors
 
 ```ts
-import { SfVoiceMediaError } from "@sf-voice/media";
+import { RaidzeroMediaError } from "@raidzero/media";
 
 try {
   await client.search({ query: "...", asset_class: "customer_acme" });
 } catch (err) {
-  if (err instanceof SfVoiceMediaError) {
+  if (err instanceof RaidzeroMediaError) {
     console.error(err.code);    // machine-readable code
     console.error(err.status);  // HTTP status
     console.error(err.message); // human-readable
@@ -261,6 +261,6 @@ try {
 
 | Class | When |
 | --- | --- |
-| `SfVoiceMediaError` | Non-2xx API response. |
-| `SfVoiceMediaRequestTimeoutError` | Single request exceeded `timeoutMs`. |
-| `SfVoiceMediaPollTimeoutError` | `pollTask` timed out before terminal state. Carries `taskId`. |
+| `RaidzeroMediaError` | Non-2xx API response. |
+| `RaidzeroMediaRequestTimeoutError` | Single request exceeded `timeoutMs`. |
+| `RaidzeroMediaPollTimeoutError` | `pollTask` timed out before terminal state. Carries `taskId`. |

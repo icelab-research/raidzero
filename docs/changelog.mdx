@@ -1,7 +1,29 @@
 ---
 title: "Changelog"
-description: "Product updates and changes to San Francisco Voice Company."
+description: "Product updates and changes to Raidzero."
 ---
+
+<Update label="November 15, 2026">
+
+## Raidzero SDK 0.2.1
+
+All official SDKs now use the Raidzero identity across registry coordinates,
+imports, public client types, environment variables, examples, and documentation.
+This is an intentionally breaking release; the previous `sf-voice` package and
+API names are not retained as compatibility aliases.
+
+- TypeScript — `@raidzero/media`
+- Python — `raidzero-media`, imported as `raidzero`
+- Elixir — `:raidzero`, with the `RaidzeroMedia` module
+- Rust — `raidzero_media`
+- Go — `github.com/icelab-research/raidzero/go`
+- Java — `icu.raidzero:raidzero-media-java`
+- Kotlin — `icu.raidzero:raidzero-media-kotlin`
+
+The default endpoint is `https://api.raidzero.icu` and examples read API keys
+from `RAIDZERO_API_KEY`.
+
+</Update>
 
 <Update label="May 29, 2026">
 
@@ -9,12 +31,12 @@ description: "Product updates and changes to San Francisco Voice Company."
 
 **Official SDKs across six languages.** Install and ship against our media API from your stack of choice. Each SDK covers the core lifecycle: `ingest`, `getTask`, `pollTask`, `listAssets`, `getAsset`, `deleteAsset`, and `search`.
 
-- [TypeScript](/sdks/typescript) — `@sf-voice/media` for Node.js, Bun, Deno, and the browser
-- [Elixir](/sdks/elixir) — `:sf_voice`, built on `Req`
-- [Go](/sdks/go) — `sfvoice`, idiomatic with `context.Context`
-- [Rust](/sdks/rust) — `sf_voice_media`, async on `tokio` with a builder pattern
-- [Java](/sdks/java) — `sh.sf-voice:sf-voice-media-java`, synchronous on Java 17+
-- [Kotlin](/sdks/kotlin) — `sh.sf-voice:sf-voice-media-kotlin`, coroutine-native with Ktor
+- [TypeScript](/sdks/typescript) — `@raidzero/media` for Node.js, Bun, Deno, and the browser
+- [Elixir](/sdks/elixir) — `:raidzero`, built on `Req`
+- [Go](/sdks/go) — `raidzero`, idiomatic with `context.Context`
+- [Rust](/sdks/rust) — `raidzero_media`, async on `tokio` with a builder pattern
+- [Java](/sdks/java) — `icu.raidzero:raidzero-media-java`, synchronous on Java 17+
+- [Kotlin](/sdks/kotlin) — `icu.raidzero:raidzero-media-kotlin`, coroutine-native with Ktor
 
 What this means for you: pick a language, pin version `0.1.1`, and start indexing and searching media without building your own transcript store or embedding pipeline.
 

@@ -1,9 +1,9 @@
 ---
 title: "Rust"
-description: "sf_voice_media Rust SDK reference: async client built on reqwest and tokio with a builder pattern for ingesting assets and searching media."
+description: "raidzero_media Rust SDK reference: async client built on reqwest and tokio with a builder pattern for ingesting assets and searching media."
 ---
 
-`sf_voice_media` — async, built on `reqwest`. Requires `tokio`.
+`raidzero_media` — async, built on `reqwest`. Requires `tokio`.
 
 Use this SDK inside Tokio services or jobs where ingest and polling should be part of the same async runtime.
 
@@ -13,25 +13,25 @@ Add to `Cargo.toml`:
 
 ```toml
 [dependencies]
-sf_voice_media = "0.1.1"
+raidzero_media = "0.2.1"
 tokio = { version = "1", features = ["full"] }
 ```
 
 ## Create a client
 
 ```rust
-use sf_voice_media::SfVoiceMedia;
+use raidzero_media::RaidzeroMedia;
 
-let client = SfVoiceMedia::new(
-    "https://api.sf-voice.com",
-    std::env::var("SF_VOICE_API_KEY").unwrap(),
+let client = RaidzeroMedia::new(
+    "https://api.raidzero.icu",
+    std::env::var("RAIDZERO_API_KEY").unwrap(),
 )?;
 ```
 
 ## Ingest
 
 ```rust
-use sf_voice_media::types::{IngestRequest, MediaType};
+use raidzero_media::types::{IngestRequest, MediaType};
 
 let mut request = IngestRequest::from_url_with_asset_id(
     "call_001",
@@ -46,7 +46,7 @@ let task_id = resp.task_id;
 S3:
 
 ```rust
-use sf_voice_media::types::{IngestRequest, MediaType};
+use raidzero_media::types::{IngestRequest, MediaType};
 
 let mut request = IngestRequest::from_s3_with_asset_id(
     "call_001",
@@ -59,7 +59,7 @@ let resp = client.ingest(&request).await?;
 ## Poll until ready
 
 ```rust
-use sf_voice_media::types::TaskStatus;
+use raidzero_media::types::TaskStatus;
 use std::time::Duration;
 
 let task = client.poll_task(
@@ -80,7 +80,7 @@ Pass the polling interval and total timeout as `Duration` values.
 ## Search
 
 ```rust
-use sf_voice_media::types::SearchRequest;
+use raidzero_media::types::SearchRequest;
 
 let mut request = SearchRequest::new("customer asks about pricing")
     .threshold(0.7)
@@ -109,17 +109,17 @@ client.delete_asset("call_001").await?;
 ## Errors
 
 ```rust
-use sf_voice_media::SfVoiceMediaError;
+use raidzero_media::RaidzeroMediaError;
 
 match client.search(req).await {
     Ok(resp) => { /* use resp */ }
-    Err(SfVoiceMediaError::Api { code, message, status }) => {
+    Err(RaidzeroMediaError::Api { code, message, status }) => {
         eprintln!("api error {status} [{code}]: {message}");
     }
-    Err(SfVoiceMediaError::Http(e)) => {
+    Err(RaidzeroMediaError::Http(e)) => {
         eprintln!("transport error: {e}");
     }
-    Err(SfVoiceMediaError::PollTimeout { task_id }) => {
+    Err(RaidzeroMediaError::PollTimeout { task_id }) => {
         eprintln!("timed out polling {task_id}");
     }
 }

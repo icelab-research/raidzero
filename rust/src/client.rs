@@ -1,4 +1,4 @@
-//! `SfVoiceMedia` — the main async client for the sf-voice media API.
+//! `RaidzeroMedia` — the main async client for the raidzero media API.
 //!
 //! construct once, reuse across tasks. the underlying `reqwest::Client`
 //! connection pool is shared, so cloning is cheap.
@@ -12,7 +12,7 @@ use reqwest::{header, Client, StatusCode};
 use tokio::time::Instant;
 
 use crate::{
-    error::SfVoiceMediaError,
+    error::RaidzeroMediaError,
     types::{
         AlertOptions, Asset, AssetListResponse, CreateMonitorRequest, IngestRequest,
         IngestResponse, Monitor, MonitorEvent, MonitorEventListResponse, MonitorListResponse,
@@ -20,28 +20,28 @@ use crate::{
     },
 };
 
-fn is_retryable_alert_error(error: &SfVoiceMediaError) -> bool {
+fn is_retryable_alert_error(error: &RaidzeroMediaError) -> bool {
     match error {
-        SfVoiceMediaError::Http(_) => true,
-        SfVoiceMediaError::Api { status, .. } => *status == 429 || *status >= 500,
+        RaidzeroMediaError::Http(_) => true,
+        RaidzeroMediaError::Api { status, .. } => *status == 429 || *status >= 500,
         _ => false,
     }
 }
 
-/// async client for the sf-voice media API.
+/// async client for the raidzero media API.
 ///
 /// ```no_run
-/// # use sf_voice_media::SfVoiceMedia;
-/// let client = SfVoiceMedia::new("https://api.sf-voice.com", "your-api-key");
+/// # use raidzero_media::RaidzeroMedia;
+/// let client = RaidzeroMedia::new("https://api.raidzero.icu", "your-api-key");
 /// ```
 #[derive(Clone, Debug)]
-pub struct SfVoiceMedia {
+pub struct RaidzeroMedia {
     base_url: String,
     http: Client,
 }
 
-impl SfVoiceMedia {
-    /// Creates a new SfVoiceMedia client configured with a base URL and API key.
+impl RaidzeroMedia {
+    /// Creates a new RaidzeroMedia client configured with a base URL and API key.
     ///
     /// The provided `base_url` should not have a trailing slash. The `api_key` is attached to every request
     /// as a bearer token and is marked sensitive in the underlying HTTP client.
@@ -49,9 +49,9 @@ impl SfVoiceMedia {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::SfVoiceMedia;
+    /// use raidzero_media::RaidzeroMedia;
     ///
-    /// let client = SfVoiceMedia::new("https://api.example.com", "my-secret-key");
+    /// let client = RaidzeroMedia::new("https://api.example.com", "my-secret-key");
     /// ```
     pub fn new(base_url: impl Into<String>, api_key: impl Into<String>) -> Self {
         let mut auth_value = header::HeaderValue::from_str(&format!("Bearer {}", api_key.into()))
@@ -79,7 +79,7 @@ impl SfVoiceMedia {
     /// # Examples
     ///
     /// ```ignore
-    /// let client = SfVoiceMedia { base_url: "https://api.example.com".to_string(), http: reqwest::Client::new() };
+    /// let client = RaidzeroMedia { base_url: "https://api.example.com".to_string(), http: reqwest::Client::new() };
     /// let full = client.url("/api/v1/ingest");
     /// assert_eq!(full, "https://api.example.com/api/v1/ingest");
     /// ```
@@ -91,21 +91,21 @@ impl SfVoiceMedia {
         percent_encoding::utf8_percent_encode(value, percent_encoding::NON_ALPHANUMERIC).to_string()
     }
 
-    /// Converts a non-success HTTP response into an `SfVoiceMediaError` and otherwise returns the original response.
+    /// Converts a non-success HTTP response into an `RaidzeroMediaError` and otherwise returns the original response.
     ///
     /// If the response status is not in the 2xx range, the function reads the response body (falling back to an empty body on read failure)
-    /// and produces an `SfVoiceMediaError` constructed from the numeric status code and response bytes.
+    /// and produces an `RaidzeroMediaError` constructed from the numeric status code and response bytes.
     ///
     /// # Returns
     ///
-    /// `Ok(response)` when the response status is 2xx, `Err(SfVoiceMediaError::Api { .. })` containing the status and body otherwise.
-    async fn check(response: reqwest::Response) -> Result<reqwest::Response, SfVoiceMediaError> {
+    /// `Ok(response)` when the response status is 2xx, `Err(RaidzeroMediaError::Api { .. })` containing the status and body otherwise.
+    async fn check(response: reqwest::Response) -> Result<reqwest::Response, RaidzeroMediaError> {
         if response.status().is_success() {
             return Ok(response);
         }
         let status = response.status().as_u16();
         let body = response.bytes().await.unwrap_or_default();
-        Err(SfVoiceMediaError::from_response(status, &body))
+        Err(RaidzeroMediaError::from_response(status, &body))
     }
 
     // ─── public API ───────────────────────────────────────────────────────────
@@ -119,11 +119,11 @@ impl SfVoiceMedia {
     /// # Examples
     ///
     /// ```no_run
-    /// use sf_voice_media::{SfVoiceMedia, types::IngestRequest};
+    /// use raidzero_media::{RaidzeroMedia, types::IngestRequest};
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = SfVoiceMedia::new("https://api.example.com", "my-api-key");
+    ///     let client = RaidzeroMedia::new("https://api.example.com", "my-api-key");
     ///     let request = IngestRequest::from_url_with_asset_id("video-1", "https://example.com/video.mp4");
     ///     let response = client.ingest(&request).await.unwrap();
     ///     // response contains a task id to poll for progress
@@ -132,7 +132,7 @@ impl SfVoiceMedia {
     pub async fn ingest(
         &self,
         request: &IngestRequest,
-    ) -> Result<IngestResponse, SfVoiceMediaError> {
+    ) -> Result<IngestResponse, RaidzeroMediaError> {
         let response = self
             .http
             .post(self.url("/api/v1/ingest"))
@@ -149,20 +149,20 @@ impl SfVoiceMedia {
     ///
     /// # Errors
     ///
-    /// Returns `SfVoiceMediaError` if the HTTP request fails, the response has a non-success status, or the response body cannot be parsed as a `Task`.
+    /// Returns `RaidzeroMediaError` if the HTTP request fails, the response has a non-success status, or the response body cannot be parsed as a `Task`.
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// use sf_voice_media::SfVoiceMedia;
+    /// use raidzero_media::RaidzeroMedia;
     ///
     /// # async fn run() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = SfVoiceMedia::new("https://api.example.com", "my-api-key");
+    /// let client = RaidzeroMedia::new("https://api.example.com", "my-api-key");
     /// let task = client.get_task("task-id-123").await?;
     /// println!("task id: {}", task.task_id);
     /// # Ok(()) }
     /// ```
-    pub async fn get_task(&self, task_id: impl Into<String>) -> Result<Task, SfVoiceMediaError> {
+    pub async fn get_task(&self, task_id: impl Into<String>) -> Result<Task, RaidzeroMediaError> {
         let response = self
             .http
             .get(self.url(&format!(
@@ -181,16 +181,16 @@ impl SfVoiceMedia {
     ///
     /// # Returns
     ///
-    /// `Ok(Task)` when the task reaches a terminal state; `Err(SfVoiceMediaError::PollTimeout { task_id })` if the timeout elapses before a terminal state; other `Err(SfVoiceMediaError)` values if fetching the task fails.
+    /// `Ok(Task)` when the task reaches a terminal state; `Err(RaidzeroMediaError::PollTimeout { task_id })` if the timeout elapses before a terminal state; other `Err(RaidzeroMediaError)` values if fetching the task fails.
     ///
     /// # Examples
     ///
     /// ```no_run
     /// use std::time::Duration;
-    /// use sf_voice_media::SfVoiceMedia;
+    /// use raidzero_media::RaidzeroMedia;
     ///
     /// # async fn doc_example() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = SfVoiceMedia::new("https://api.example.com", "api-key");
+    /// let client = RaidzeroMedia::new("https://api.example.com", "api-key");
     /// let task = client
     ///     .poll_task("my-task-id", Duration::from_secs(2), Duration::from_secs(60))
     ///     .await?;
@@ -202,7 +202,7 @@ impl SfVoiceMedia {
         task_id: impl Into<String>,
         interval: Duration,
         timeout: Duration,
-    ) -> Result<Task, SfVoiceMediaError> {
+    ) -> Result<Task, RaidzeroMediaError> {
         let task_id = task_id.into();
         let deadline = Instant::now() + timeout;
 
@@ -212,7 +212,7 @@ impl SfVoiceMedia {
                 return Ok(task);
             }
             if Instant::now() >= deadline {
-                return Err(SfVoiceMediaError::PollTimeout {
+                return Err(RaidzeroMediaError::PollTimeout {
                     task_id: task_id.clone(),
                 });
             }
@@ -223,15 +223,15 @@ impl SfVoiceMedia {
     /// Lists assets with optional pagination.
     ///
     /// If `page` or `limit` is `None`, the server's default values are used. The response
-    /// is parsed as an `AssetListResponse` on success; errors are returned as `SfVoiceMediaError`.
+    /// is parsed as an `AssetListResponse` on success; errors are returned as `RaidzeroMediaError`.
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// use sf_voice_media::client::SfVoiceMedia;
+    /// use raidzero_media::client::RaidzeroMedia;
     ///
     /// // Create the client (example credentials)
-    /// let client = SfVoiceMedia::new("https://api.example.com", "api-key");
+    /// let client = RaidzeroMedia::new("https://api.example.com", "api-key");
     ///
     /// // Fetch the first page with up to 50 items
     /// let resp = tokio::runtime::Runtime::new().unwrap().block_on(async {
@@ -243,7 +243,7 @@ impl SfVoiceMedia {
         &self,
         page: Option<u32>,
         limit: Option<u32>,
-    ) -> Result<AssetListResponse, SfVoiceMediaError> {
+    ) -> Result<AssetListResponse, RaidzeroMediaError> {
         let mut request = self.http.get(self.url("/api/v1/assets"));
 
         if let Some(p) = page {
@@ -259,21 +259,21 @@ impl SfVoiceMedia {
 
     /// Retrieve an asset by its ID.
     ///
-    /// On success returns the requested `Asset`. On error returns `SfVoiceMediaError`.
+    /// On success returns the requested `Asset`. On error returns `RaidzeroMediaError`.
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// # use sf_voice_media::SfVoiceMedia;
+    /// # use raidzero_media::RaidzeroMedia;
     /// #[tokio::main]
     /// async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    ///     let client = SfVoiceMedia::new("https://api.example.com", "my-api-key");
+    ///     let client = RaidzeroMedia::new("https://api.example.com", "my-api-key");
     ///     let asset = client.get_asset("asset-id").await?;
     ///     println!("{}", asset.asset_id());
     ///     Ok(())
     /// }
     /// ```
-    pub async fn get_asset(&self, id: impl Into<String>) -> Result<Asset, SfVoiceMediaError> {
+    pub async fn get_asset(&self, id: impl Into<String>) -> Result<Asset, RaidzeroMediaError> {
         let response = self
             .http
             .get(self.url(&format!(
@@ -293,20 +293,20 @@ impl SfVoiceMedia {
     ///
     /// # Returns
     ///
-    /// `Ok(())` if the server returns 204 No Content, `Err(SfVoiceMediaError)` otherwise.
+    /// `Ok(())` if the server returns 204 No Content, `Err(RaidzeroMediaError)` otherwise.
     ///
     /// # Examples
     ///
     /// ```no_run
-    /// use sf_voice_media::{SfVoiceMedia, SfVoiceMediaError};
+    /// use raidzero_media::{RaidzeroMedia, RaidzeroMediaError};
     ///
-    /// # async fn run() -> Result<(), SfVoiceMediaError> {
-    /// let client = SfVoiceMedia::new("https://api.example.com", "api-key");
+    /// # async fn run() -> Result<(), RaidzeroMediaError> {
+    /// let client = RaidzeroMedia::new("https://api.example.com", "api-key");
     /// client.delete_asset("asset-id").await?;
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn delete_asset(&self, id: impl Into<String>) -> Result<(), SfVoiceMediaError> {
+    pub async fn delete_asset(&self, id: impl Into<String>) -> Result<(), RaidzeroMediaError> {
         let response = self
             .http
             .delete(self.url(&format!(
@@ -323,7 +323,7 @@ impl SfVoiceMedia {
         }
         let status_u16 = status.as_u16();
         let body = response.bytes().await.unwrap_or_default();
-        Err(SfVoiceMediaError::from_response(status_u16, &body))
+        Err(RaidzeroMediaError::from_response(status_u16, &body))
     }
 
     /// Perform a semantic search over ingested media and return matching results.
@@ -333,10 +333,10 @@ impl SfVoiceMedia {
     /// # Examples
     ///
     /// ```no_run
-    /// use sf_voice_media::{SfVoiceMedia, types::SearchRequest};
+    /// use raidzero_media::{RaidzeroMedia, types::SearchRequest};
     ///
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    /// let client = SfVoiceMedia::new("https://api.example.com", "API_KEY");
+    /// let client = RaidzeroMedia::new("https://api.example.com", "API_KEY");
     /// let request = SearchRequest::new("product launch");
     /// let response = client.search(&request).await?;
     /// // use `response`
@@ -346,7 +346,7 @@ impl SfVoiceMedia {
     pub async fn search(
         &self,
         request: &SearchRequest,
-    ) -> Result<SearchResponse, SfVoiceMediaError> {
+    ) -> Result<SearchResponse, RaidzeroMediaError> {
         let response = self
             .http
             .post(self.url("/api/v1/search"))
@@ -358,7 +358,7 @@ impl SfVoiceMedia {
     }
 
     /// List native transcript prefixes visible to this API key.
-    pub async fn list_prefixes(&self) -> Result<PrefixListResponse, SfVoiceMediaError> {
+    pub async fn list_prefixes(&self) -> Result<PrefixListResponse, RaidzeroMediaError> {
         let response = self.http.get(self.url("/api/v1/prefixes")).send().await?;
         Ok(Self::check(response).await?.json().await?)
     }
@@ -369,7 +369,7 @@ impl SfVoiceMedia {
     pub async fn create_monitor(
         &self,
         request: &CreateMonitorRequest,
-    ) -> Result<Monitor, SfVoiceMediaError> {
+    ) -> Result<Monitor, RaidzeroMediaError> {
         let response = self
             .http
             .post(self.url("/api/v1/monitors"))
@@ -381,7 +381,7 @@ impl SfVoiceMedia {
     }
 
     /// List all monitors.
-    pub async fn list_monitors(&self) -> Result<MonitorListResponse, SfVoiceMediaError> {
+    pub async fn list_monitors(&self) -> Result<MonitorListResponse, RaidzeroMediaError> {
         let response = self.http.get(self.url("/api/v1/monitors")).send().await?;
 
         Ok(Self::check(response).await?.json().await?)
@@ -391,7 +391,7 @@ impl SfVoiceMedia {
     pub async fn get_monitor(
         &self,
         monitor_id: impl Into<String>,
-    ) -> Result<Monitor, SfVoiceMediaError> {
+    ) -> Result<Monitor, RaidzeroMediaError> {
         let response = self
             .http
             .get(self.url(&format!("/api/v1/monitors/{}", monitor_id.into())))
@@ -406,7 +406,7 @@ impl SfVoiceMedia {
         &self,
         monitor_id: impl Into<String>,
         request: &UpdateMonitorRequest,
-    ) -> Result<Monitor, SfVoiceMediaError> {
+    ) -> Result<Monitor, RaidzeroMediaError> {
         let response = self
             .http
             .patch(self.url(&format!("/api/v1/monitors/{}", monitor_id.into())))
@@ -421,7 +421,7 @@ impl SfVoiceMedia {
     pub async fn delete_monitor(
         &self,
         monitor_id: impl Into<String>,
-    ) -> Result<(), SfVoiceMediaError> {
+    ) -> Result<(), RaidzeroMediaError> {
         let response = self
             .http
             .delete(self.url(&format!("/api/v1/monitors/{}", monitor_id.into())))
@@ -439,7 +439,7 @@ impl SfVoiceMedia {
         matched_only: Option<bool>,
         limit: Option<u64>,
         offset: Option<u64>,
-    ) -> Result<MonitorEventListResponse, SfVoiceMediaError> {
+    ) -> Result<MonitorEventListResponse, RaidzeroMediaError> {
         let mut request = self
             .http
             .get(self.url(&format!("/api/v1/monitors/{}/events", monitor_id.into())));
@@ -469,7 +469,7 @@ impl SfVoiceMedia {
         callback: impl Fn(MonitorEvent) + Send + 'static,
         interval: Duration,
         opts: AlertOptions,
-    ) -> Result<AlertHandle, SfVoiceMediaError> {
+    ) -> Result<AlertHandle, RaidzeroMediaError> {
         let mut req = CreateMonitorRequest::new(text);
         req.slug = opts.slug;
         req.project_id = opts.project_id;
@@ -503,7 +503,7 @@ impl SfVoiceMedia {
 
                 'pages: loop {
                     if page_count >= 1_000 {
-                        return Err(SfVoiceMediaError::AlertPaginationOverflow);
+                        return Err(RaidzeroMediaError::AlertPaginationOverflow);
                     }
                     page_count += 1;
                     let resp = match client_clone
@@ -575,18 +575,18 @@ impl SfVoiceMedia {
     }
 }
 
-/// handle returned by `SfVoiceMedia::alert()`. call `stop()` to cancel
+/// handle returned by `RaidzeroMedia::alert()`. call `stop()` to cancel
 /// polling and delete the underlying monitor.
 pub struct AlertHandle {
     pub monitor_id: String,
     stop_flag: Arc<AtomicBool>,
-    task: tokio::task::JoinHandle<Result<(), SfVoiceMediaError>>,
-    client: SfVoiceMedia,
+    task: tokio::task::JoinHandle<Result<(), RaidzeroMediaError>>,
+    client: RaidzeroMedia,
 }
 
 impl AlertHandle {
     /// stop polling and delete the monitor. consumes the handle.
-    pub async fn stop(self) -> Result<(), SfVoiceMediaError> {
+    pub async fn stop(self) -> Result<(), RaidzeroMediaError> {
         self.stop_flag.store(true, Ordering::Relaxed);
         self.task.abort();
         let poll_result = match self.task.await {
@@ -600,7 +600,7 @@ impl AlertHandle {
             (Ok(()), Ok(())) => Ok(()),
             (Err(polling), Ok(())) => Err(polling),
             (Ok(()), Err(cleanup)) => Err(cleanup),
-            (Err(polling), Err(cleanup)) => Err(SfVoiceMediaError::AlertCleanup {
+            (Err(polling), Err(cleanup)) => Err(RaidzeroMediaError::AlertCleanup {
                 polling: polling.to_string(),
                 cleanup: cleanup.to_string(),
             }),
@@ -611,16 +611,16 @@ impl AlertHandle {
 #[cfg(test)]
 mod tests {
     use super::is_retryable_alert_error;
-    use crate::error::SfVoiceMediaError;
+    use crate::error::RaidzeroMediaError;
 
     #[test]
     fn alert_retries_only_transient_api_failures() {
-        let rate_limited = SfVoiceMediaError::Api {
+        let rate_limited = RaidzeroMediaError::Api {
             code: "rate_limited".into(),
             message: "retry later".into(),
             status: 429,
         };
-        let invalid = SfVoiceMediaError::Api {
+        let invalid = RaidzeroMediaError::Api {
             code: "invalid".into(),
             message: "bad request".into(),
             status: 400,

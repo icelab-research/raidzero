@@ -1,9 +1,9 @@
 ---
 title: "Java"
-description: "sf-voice-media-java SDK reference for Java 17+: synchronous client for ingesting media assets, polling indexing tasks, and running scoped search."
+description: "raidzero-media-java SDK reference for Java 17+: synchronous client for ingesting media assets, polling indexing tasks, and running scoped search."
 ---
 
-`sh.sf-voice:sf-voice-media-java` — synchronous Java client, builder pattern throughout, Java 17+.
+`icu.raidzero:raidzero-media-java` — synchronous Java client, builder pattern throughout, Java 17+.
 
 Use this SDK when a blocking client fits your service or batch job. Kotlin users should use the coroutine-native SDK.
 
@@ -12,21 +12,21 @@ Use this SDK when a blocking client fits your service or batch job. Kotlin users
 <CodeGroup>
 ```kotlin build.gradle.kts
 dependencies {
-    implementation("sh.sf-voice:sf-voice-media-java:0.1.1")
+    implementation("icu.raidzero:raidzero-media-java:0.2.1")
 }
 ```
 
 ```groovy build.gradle
 dependencies {
-    implementation 'sh.sf-voice:sf-voice-media-java:0.1.1'
+    implementation 'icu.raidzero:raidzero-media-java:0.2.1'
 }
 ```
 
 ```xml pom.xml
 <dependency>
-    <groupId>sh.sf-voice</groupId>
-    <artifactId>sf-voice-media-java</artifactId>
-    <version>0.1.1</version>
+    <groupId>icu.raidzero</groupId>
+    <artifactId>raidzero-media-java</artifactId>
+    <version>0.2.1</version>
 </dependency>
 ```
 </CodeGroup>
@@ -34,19 +34,19 @@ dependencies {
 ## Create a client
 
 ```java
-import com.sfvoice.media.SfVoiceMediaClient;
+import icu.raidzero.media.RaidzeroMediaClient;
 
-SfVoiceMediaClient client = new SfVoiceMediaClient(
-    System.getenv("SF_VOICE_API_KEY"),
-    "https://api.sf-voice.com"
+RaidzeroMediaClient client = new RaidzeroMediaClient(
+    System.getenv("RAIDZERO_API_KEY"),
+    "https://api.raidzero.icu"
 );
 ```
 
 ## Ingest
 
 ```java
-import com.sfvoice.media.models.IngestRequest;
-import com.sfvoice.media.models.IngestResponse;
+import icu.raidzero.media.models.IngestRequest;
+import icu.raidzero.media.models.IngestResponse;
 
 IngestRequest req = IngestRequest.fromUrl(
         "call_001",
@@ -63,7 +63,7 @@ String taskId = resp.getTaskId();
 ## Poll until ready
 
 ```java
-import com.sfvoice.media.models.Task;
+import icu.raidzero.media.models.Task;
 
 Task task = client.pollTask(taskId, 2000, 120_000);
 
@@ -77,8 +77,8 @@ if ("failed".equals(task.getStatus())) {
 ## Search
 
 ```java
-import com.sfvoice.media.models.SearchRequest;
-import com.sfvoice.media.models.SearchResponse;
+import icu.raidzero.media.models.SearchRequest;
+import icu.raidzero.media.models.SearchResponse;
 
 SearchRequest req = SearchRequest.query("customer asks about pricing")
     .assetClass("customer_acme")
@@ -111,11 +111,11 @@ client.deleteAsset("call_001");
 ## Errors
 
 ```java
-import com.sfvoice.media.SfVoiceMediaException;
+import icu.raidzero.media.RaidzeroMediaException;
 
 try {
     client.search(req);
-} catch (SfVoiceMediaException e) {
+} catch (RaidzeroMediaException e) {
     System.err.println(e.getCode() + " " + e.getStatus() + ": " + e.getMessage());
 }
 ```

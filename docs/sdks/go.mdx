@@ -6,24 +6,24 @@ description: "Go SDK reference for our media API: idiomatic Go with context.Cont
 ## Install
 
 ```sh
-go get github.com/icelab-research/raidzero/go@v0.1.1
+go get github.com/icelab-research/raidzero/go@v0.2.1
 ```
 
 ## Create a client
 
 ```go
-import sfvoice "github.com/icelab-research/raidzero/go"
+import raidzero "github.com/icelab-research/raidzero/go"
 
-client := sfvoice.New(
-    "https://api.sf-voice.com",
-    os.Getenv("SF_VOICE_API_KEY"),
+client := raidzero.New(
+    "https://api.raidzero.icu",
+    os.Getenv("RAIDZERO_API_KEY"),
 )
 ```
 
 Custom `http.Client`:
 
 ```go
-client := sfvoice.NewWithHTTPClient(baseURL, apiKey, &http.Client{
+client := raidzero.NewWithHTTPClient(baseURL, apiKey, &http.Client{
     Timeout: 30 * time.Second,
 })
 ```
@@ -31,7 +31,7 @@ client := sfvoice.NewWithHTTPClient(baseURL, apiKey, &http.Client{
 ## Ingest
 
 ```go
-resp, err := client.Ingest(ctx, &sfvoice.IngestRequest{
+resp, err := client.Ingest(ctx, &raidzero.IngestRequest{
     Source:     "url",
     AssetID:    "call_001",
     AssetClass: "customer_acme",
@@ -47,15 +47,15 @@ taskID := resp.TaskID
 ## Poll until ready
 
 ```go
-task, err := client.PollTask(ctx, taskID, &sfvoice.PollOptions{
+task, err := client.PollTask(ctx, taskID, &raidzero.PollOptions{
     IntervalMs: 2000,
     TimeoutMs:  120_000,
 })
 if err != nil {
-    return err // *sfvoice.PollTimeoutError if timed out
+    return err // *raidzero.PollTimeoutError if timed out
 }
 
-if task.Status == sfvoice.TaskStatusFailed {
+if task.Status == raidzero.TaskStatusFailed {
     return fmt.Errorf("indexing failed: %s", task.Error)
 }
 ```
@@ -65,7 +65,7 @@ if task.Status == sfvoice.TaskStatusFailed {
 Distinguish a timeout error:
 
 ```go
-var pollErr *sfvoice.PollTimeoutError
+var pollErr *raidzero.PollTimeoutError
 if errors.As(err, &pollErr) {
     log.Printf("timed out polling task %s", pollErr.TaskID)
 }
@@ -74,7 +74,7 @@ if errors.As(err, &pollErr) {
 ## Search
 
 ```go
-resp, err := client.Search(ctx, &sfvoice.SearchRequest{
+resp, err := client.Search(ctx, &raidzero.SearchRequest{
     Query:      "customer asks about pricing",
     AssetClass: "customer_acme",
     Types:      []string{"transcript"},
@@ -94,7 +94,7 @@ for _, r := range resp.Results {
 
 ```go
 // list
-resp, err := client.ListAssets(ctx, &sfvoice.ListAssetsParams{Page: 1, Limit: 20})
+resp, err := client.ListAssets(ctx, &raidzero.ListAssetsParams{Page: 1, Limit: 20})
 
 // get one
 asset, err := client.GetAsset(ctx, "call_001")
@@ -105,10 +105,10 @@ err = client.DeleteAsset(ctx, "call_001")
 
 ## Errors
 
-Non-2xx API responses return `*sfvoice.Error`:
+Non-2xx API responses return `*raidzero.Error`:
 
 ```go
-var apiErr *sfvoice.Error
+var apiErr *raidzero.Error
 if errors.As(err, &apiErr) {
     log.Printf("api error %d [%s]: %s", apiErr.Status, apiErr.Code, apiErr.Message)
 }

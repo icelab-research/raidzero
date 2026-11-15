@@ -1,13 +1,13 @@
-# sf-voice-media-go
+# raidzero-media-go
 
-Go SDK for the sf-voice media API.
+Go SDK for the raidzero media API.
 
-Version: `v0.1.1`
+Version: `v0.2.1`
 
 ## Installation
 
 ```sh
-go get github.com/icelab-research/raidzero/go@v0.1.1
+go get github.com/icelab-research/raidzero/go@v0.2.1
 ```
 
 For local development in this repo:
@@ -27,14 +27,14 @@ import (
  "fmt"
  "os"
 
- sfvoice "github.com/icelab-research/raidzero/go"
+ raidzero "github.com/icelab-research/raidzero/go"
 )
 
 func main() {
  ctx := context.Background()
- client := sfvoice.New("https://api.sf-voice.com", os.Getenv("SF_VOICE_API_KEY"))
+ client := raidzero.New("https://api.raidzero.icu", os.Getenv("RAIDZERO_API_KEY"))
 
- ingest, err := client.Ingest(ctx, sfvoice.IngestRequest{
+ ingest, err := client.Ingest(ctx, raidzero.IngestRequest{
   Source:    "url",
   AssetID:   "recording-1",
   URL:       "https://example.com/recording.mp4",
@@ -47,14 +47,14 @@ func main() {
 
  task, err := client.PollTask(ctx, ingest.TaskID, 1500, 120000)
  if err != nil {
-  var apiErr *sfvoice.Error
+  var apiErr *raidzero.Error
   if errors.As(err, &apiErr) {
    fmt.Println(apiErr.Code, apiErr.Status, apiErr.Message)
   }
   panic(err)
  }
 
- results, err := client.Search(ctx, sfvoice.SearchRequest{
+ results, err := client.Search(ctx, raidzero.SearchRequest{
   Query:     "product launch",
   AssetIDs:  []string{task.AssetID},
   Types:     []string{"conversation"},

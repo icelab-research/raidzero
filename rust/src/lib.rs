@@ -1,16 +1,16 @@
-//! # sf-voice-media
+//! # raidzero-media
 //!
-//! async Rust client for the sf-voice media API.
+//! async Rust client for the raidzero media API.
 //!
 //! ## quick start
 //!
 //! ```no_run
-//! use sf_voice_media::{SfVoiceMedia, types::IngestRequest};
+//! use raidzero_media::{RaidzeroMedia, types::IngestRequest};
 //! use std::time::Duration;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let client = SfVoiceMedia::new("https://api.sf-voice.com", "your-api-key");
+//!     let client = RaidzeroMedia::new("https://api.raidzero.icu", "your-api-key");
 //!
 //!     let ingest = client
 //!         .ingest(&IngestRequest::from_url_with_asset_id("video-1", "https://example.com/video.mp4"))
@@ -30,5 +30,5 @@ pub mod error;
 pub mod types;
 
 // flatten the most-used items to the crate root for ergonomic imports
-pub use client::SfVoiceMedia;
-pub use error::SfVoiceMediaError;
+pub use client::RaidzeroMedia;
+pub use error::RaidzeroMediaError;

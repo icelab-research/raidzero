@@ -1,8 +1,8 @@
-# sf-voice-media-java
+# raidzero-media-java
 
-Java 17 SDK for the sf-voice media API.
+Java 17 SDK for the raidzero media API.
 
-Version: `0.1.1`
+Version: `0.2.1`
 
 ## Installation
 
@@ -10,7 +10,7 @@ Gradle:
 
 ```kotlin
 dependencies {
-    implementation("sh.sf-voice:sf-voice-media-java:0.1.1")
+    implementation("icu.raidzero:raidzero-media-java:0.2.1")
 }
 ```
 
@@ -23,27 +23,27 @@ gradle jar
 The local jar is written to:
 
 ```txt
-build/libs/sf-voice-media-0.1.1.jar
+build/libs/raidzero-media-0.2.1.jar
 ```
 
 ## Usage
 
 ```java
-import com.sfvoice.media.SfVoiceMediaClient;
-import com.sfvoice.media.SfVoiceMediaException;
-import com.sfvoice.media.models.IngestRequest;
-import com.sfvoice.media.models.SearchRequest;
-import com.sfvoice.media.models.SearchResponse;
-import com.sfvoice.media.models.Task;
+import icu.raidzero.media.RaidzeroMediaClient;
+import icu.raidzero.media.RaidzeroMediaException;
+import icu.raidzero.media.models.IngestRequest;
+import icu.raidzero.media.models.SearchRequest;
+import icu.raidzero.media.models.SearchResponse;
+import icu.raidzero.media.models.Task;
 
 import java.util.List;
 import java.util.Map;
 
 public class Example {
     public static void main(String[] args) throws Exception {
-        SfVoiceMediaClient client = new SfVoiceMediaClient.Builder()
-            .apiKey(System.getenv("SF_VOICE_API_KEY"))
-            .baseUrl("https://api.sf-voice.com")
+        RaidzeroMediaClient client = new RaidzeroMediaClient.Builder()
+            .apiKey(System.getenv("RAIDZERO_API_KEY"))
+            .baseUrl("https://api.raidzero.icu")
             .build();
 
         try {
@@ -65,7 +65,7 @@ public class Example {
             );
 
             System.out.println(search.getResults());
-        } catch (SfVoiceMediaException error) {
+        } catch (RaidzeroMediaException error) {
             System.err.println(error.getCode() + " " + error.getStatus() + " " + error.getMessage());
             throw error;
         }
@@ -93,5 +93,5 @@ temporary monitor, and throws any terminal polling or cleanup failure.
 
 ## Examples
 
-- [`../apps/sf-voice/java-example`](../apps/sf-voice/java-example) - Spring Boot
+- [`../apps/raidzero/java-example`](../apps/raidzero/java-example) - Spring Boot
   REST proxy example.

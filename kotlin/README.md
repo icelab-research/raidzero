@@ -1,8 +1,8 @@
-# sf-voice-media-kotlin
+# raidzero-media-kotlin
 
-Kotlin/JVM SDK for the sf-voice media API.
+Kotlin/JVM SDK for the raidzero media API.
 
-Version: `0.1.1`
+Version: `0.2.1`
 
 ## Installation
 
@@ -10,7 +10,7 @@ Gradle:
 
 ```kotlin
 dependencies {
-    implementation("sh.sf-voice:sf-voice-media-kotlin:0.1.1")
+    implementation("icu.raidzero:raidzero-media-kotlin:0.2.1")
 }
 ```
 
@@ -23,22 +23,22 @@ gradle jar
 The local jar is written to:
 
 ```txt
-build/libs/sf-voice-media-0.1.1.jar
+build/libs/raidzero-media-0.2.1.jar
 ```
 
 ## Usage
 
 ```kotlin
-import com.sfvoice.media.IngestRequest
-import com.sfvoice.media.MediaType
-import com.sfvoice.media.SearchMatchType
-import com.sfvoice.media.SearchRequest
-import com.sfvoice.media.SfVoiceMediaClient
+import icu.raidzero.media.IngestRequest
+import icu.raidzero.media.MediaType
+import icu.raidzero.media.SearchMatchType
+import icu.raidzero.media.SearchRequest
+import icu.raidzero.media.RaidzeroMediaClient
 
 suspend fun main() {
-    val client = SfVoiceMediaClient(
-        apiKey = System.getenv("SF_VOICE_API_KEY"),
-        baseUrl = "https://api.sf-voice.com",
+    val client = RaidzeroMediaClient(
+        apiKey = System.getenv("RAIDZERO_API_KEY"),
+        baseUrl = "https://api.raidzero.icu",
     )
 
     try {
@@ -89,5 +89,5 @@ temporary monitor, and throws any terminal polling or cleanup failure.
 
 ## Examples
 
-- [`../apps/sf-voice/kotlin-example`](../apps/sf-voice/kotlin-example) - Ktor
+- [`../apps/raidzero/kotlin-example`](../apps/raidzero/kotlin-example) - Ktor
   REST proxy example.

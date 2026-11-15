@@ -1,9 +1,9 @@
 ---
 title: "Elixir"
-description: "sf_voice Elixir SDK reference"
+description: "raidzero Elixir SDK reference"
 ---
 
-`:sf_voice` — built on `Req`. All functions return `{:ok, result}` or `{:error, %SfVoiceMedia.Error{}}`.
+`:raidzero` — built on `Req`. All functions return `{:ok, result}` or `{:error, %RaidzeroMedia.Error{}}`.
 
 Use this SDK in Phoenix or Oban code where pattern matching on `{:ok, _}` / `{:error, _}` fits the rest of the app.
 
@@ -14,7 +14,7 @@ Add to your `mix.exs`:
 ```elixir
 def deps do
   [
-    {:sf_voice, "~> 0.1.1"}
+    {:raidzero, "~> 0.2.1"}
   ]
 end
 ```
@@ -28,8 +28,8 @@ mix deps.get
 ## Create a client
 
 ```elixir
-client = SfVoiceMedia.new("https://api.sf-voice.com",
-  api_key: System.get_env("SF_VOICE_API_KEY")
+client = RaidzeroMedia.new("https://api.raidzero.icu",
+  api_key: System.get_env("RAIDZERO_API_KEY")
 )
 ```
 
@@ -38,7 +38,7 @@ client = SfVoiceMedia.new("https://api.sf-voice.com",
 ## Ingest
 
 ```elixir
-{:ok, resp} = SfVoiceMedia.ingest(client, %{
+{:ok, resp} = RaidzeroMedia.ingest(client, %{
   source: "url",
   asset_id: "call_001",
   asset_class: "customer_acme",
@@ -57,15 +57,15 @@ Request keys are atoms. Response keys come back as strings (JSON convention).
 
 ```elixir
 # poll_task!/3 raises on timeout or failure
-task = SfVoiceMedia.poll_task!(client, task_id, interval_ms: 2_000, timeout_ms: 120_000)
+task = RaidzeroMedia.poll_task!(client, task_id, interval_ms: 2_000, timeout_ms: 120_000)
 ```
 
-`poll_task!` raises `%SfVoiceMedia.Error{}` if the task fails, or a timeout error if it doesn't complete within `timeout_ms`.
+`poll_task!` raises `%RaidzeroMedia.Error{}` if the task fails, or a timeout error if it doesn't complete within `timeout_ms`.
 
 If you prefer pattern matching over exceptions:
 
 ```elixir
-case SfVoiceMedia.get_task(client, task_id) do
+case RaidzeroMedia.get_task(client, task_id) do
   {:ok, %{status: "ready"}} -> :indexed
   {:ok, %{status: "failed", error: reason}} -> {:error, reason}
   {:ok, _} -> :still_running
@@ -76,7 +76,7 @@ end
 ## Search
 
 ```elixir
-{:ok, result} = SfVoiceMedia.search(client, %{
+{:ok, result} = RaidzeroMedia.search(client, %{
   query: "customer asks about pricing",
   asset_class: "customer_acme",
   types: ["transcript"],
@@ -93,23 +93,23 @@ end)
 
 ```elixir
 # list
-{:ok, resp} = SfVoiceMedia.list_assets(client, %{page: 1, limit: 20})
+{:ok, resp} = RaidzeroMedia.list_assets(client, %{page: 1, limit: 20})
 
 # get one
-{:ok, asset} = SfVoiceMedia.get_asset(client, "call_001")
+{:ok, asset} = RaidzeroMedia.get_asset(client, "call_001")
 
 # delete
-{:ok, _} = SfVoiceMedia.delete_asset(client, "call_001")
+{:ok, _} = RaidzeroMedia.delete_asset(client, "call_001")
 ```
 
 ## Errors
 
-`%SfVoiceMedia.Error{}` has three fields: `code`, `message`, `status`.
+`%RaidzeroMedia.Error{}` has three fields: `code`, `message`, `status`.
 
 ```elixir
-case SfVoiceMedia.search(client, %{query: "...", asset_class: "customer_acme"}) do
+case RaidzeroMedia.search(client, %{query: "...", asset_class: "customer_acme"}) do
   {:ok, result} -> result
-  {:error, %SfVoiceMedia.Error{code: code, message: msg}} ->
+  {:error, %RaidzeroMedia.Error{code: code, message: msg}} ->
     Logger.error("search failed: #{code} — #{msg}")
     {:error, code}
 end

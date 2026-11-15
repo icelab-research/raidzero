@@ -1,1 +1,1 @@
-rootProject.name = "sf-voice-media"
+rootProject.name = "raidzero-media"

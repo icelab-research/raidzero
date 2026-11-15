@@ -1,4 +1,4 @@
-# sf-voice-signoz-go
+# raidzero-signoz-go
 
 Zero-dependency Go SDK that ships **CPU profiles** and **CPU-utilization
 metrics** to SigNoz, so SigNoz can flame-graph hot paths and fire a **Slack
@@ -27,7 +27,7 @@ One call starts two independent background loops:
 
 ```go
 agent, err := signoz.Start(signoz.Config{
-    ServiceName:     "sf-voice-api",
+    ServiceName:     "raidzero-api",
     MetricsEndpoint: "https://ingest.us.signoz.cloud:443",
     MetricsHeaders: map[string]string{
         "signoz-ingestion-key": os.Getenv("SIGNOZ_KEY"),

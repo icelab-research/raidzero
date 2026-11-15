@@ -12,30 +12,30 @@ If you're building in C++, the API is straightforward HTTP with JSON. You can us
 ```cmake
 include(FetchContent)
 FetchContent_Declare(
-  sf_voice
+  raidzero
   GIT_REPOSITORY https://github.com/icelab-research/icelab
   GIT_TAG        main
   SOURCE_SUBDIR  cpp
 )
-FetchContent_MakeAvailable(sf_voice)
+FetchContent_MakeAvailable(raidzero)
 
-target_link_libraries(your_target PRIVATE sf_voice::sf_voice)
+target_link_libraries(your_target PRIVATE raidzero::raidzero)
 ```
 
-Or copy `cpp/include/sf_voice/client.hpp` directly. You need CPR and nlohmann/json on your include path either way.
+Or copy `cpp/include/raidzero/client.hpp` directly. You need CPR and nlohmann/json on your include path either way.
 
 ## Create a client
 
 ```cpp
-#include <sf_voice/sf_voice.hpp>
+#include <raidzero/raidzero.hpp>
 
-sf_voice::SfVoiceMedia client(std::getenv("SF_VOICE_API_KEY"));
+raidzero::RaidzeroMedia client(std::getenv("RAIDZERO_API_KEY"));
 ```
 
 ## Ingest
 
 ```cpp
-sf_voice::IngestRequest req;
+raidzero::IngestRequest req;
 req.source      = "url";
 req.asset_id    = "call_001";
 req.asset_class = "customer_acme";
@@ -62,7 +62,7 @@ if (!task.ok) {
     return;
 }
 
-if (task.value.status == sf_voice::TaskStatus::Failed) {
+if (task.value.status == raidzero::TaskStatus::Failed) {
     std::cerr << "indexing failed\n";
 }
 ```
@@ -70,10 +70,10 @@ if (task.value.status == sf_voice::TaskStatus::Failed) {
 ## Search
 
 ```cpp
-sf_voice::SearchRequest req;
+raidzero::SearchRequest req;
 req.query       = "customer asks about pricing";
 req.asset_class = "customer_acme";
-req.types       = {sf_voice::SearchType::Transcript};
+req.types       = {raidzero::SearchType::Transcript};
 req.threshold   = 0.7f;
 
 auto result = client.search(req).get();

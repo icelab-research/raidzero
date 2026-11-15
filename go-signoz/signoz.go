@@ -20,7 +20,7 @@
 // Quick start:
 //
 //	agent, err := signoz.Start(signoz.Config{
-//	    ServiceName:      "sf-voice-api",
+//	    ServiceName:      "raidzero-api",
 //	    MetricsEndpoint:  "https://ingest.us.signoz.cloud:443",
 //	    MetricsHeaders:   map[string]string{"signoz-ingestion-key": os.Getenv("SIGNOZ_KEY")},
 //	    ProfilesEndpoint: "http://localhost:4040", // Pyroscope / SigNoz profiling ingest

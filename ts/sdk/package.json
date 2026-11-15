@@ -1,9 +1,9 @@
 {
-   "name": "@sf-voice/media",
-   "version": "0.1.2",
-   "description": "TypeScript SDK for the sf-voice media API",
+   "name": "@raidzero/media",
+   "version": "0.2.1",
+   "description": "TypeScript SDK for the raidzero media API",
    "license": "MIT",
-   "author": "sf-voice",
+   "author": "raidzero",
    "type": "module",
    "main": "./dist/index.cjs",
    "module": "./dist/index.js",

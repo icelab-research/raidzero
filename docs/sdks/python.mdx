@@ -1,0 +1,70 @@
+---
+title: "Python"
+description: "raidzero-media Python SDK reference: create sync or async clients, ingest assets, poll indexing tasks, and search media."
+---
+
+`raidzero-media` supports Python 3.9 and newer.
+
+Current version: `0.2.1`.
+
+## Install
+
+```sh
+pip install raidzero-media==0.2.1
+```
+
+## Create a client
+
+```python
+import os
+
+from raidzero import RaidzeroMedia
+
+client = RaidzeroMedia(
+    base_url="https://api.raidzero.icu",
+    api_key=os.environ["RAIDZERO_API_KEY"],
+)
+```
+
+## Ingest and search
+
+```python
+ingest = client.ingest(
+    {
+        "source": "url",
+        "asset_id": "call_001",
+        "url": "https://storage.example.com/calls/001.mp3",
+        "media_kind": "audio",
+        "types": ["audio", "transcript"],
+    }
+)
+
+task = client.poll_task(ingest.task_id)
+
+results = client.search(
+    {
+        "query": "customer asks about cancelling",
+        "asset_ids": [task.asset_id],
+        "types": ["transcript"],
+    }
+)
+```
+
+## Async client
+
+```python
+from raidzero import AsyncRaidzeroMedia
+
+async with AsyncRaidzeroMedia(
+    base_url="https://api.raidzero.icu",
+    api_key=os.environ["RAIDZERO_API_KEY"],
+) as client:
+    assets = await client.list_assets()
+```
+
+API failures raise `RaidzeroMediaError`. Request and polling timeouts use the
+more specific `RaidzeroMediaRequestTimeoutError` and
+`RaidzeroMediaPollTimeoutError` types.
+
+See the package [README](https://github.com/icelab-research/icelab/tree/main/python)
+for the complete API and request shapes.

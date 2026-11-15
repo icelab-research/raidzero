@@ -3,7 +3,7 @@ title: "Kotlin"
 description: "Coroutine-native Kotlin SDK reference for our media API, built on Ktor for ingesting assets, polling tasks, and running scoped search."
 ---
 
-`sh.sf-voice:sf-voice-media-kotlin` — coroutine-native Kotlin client built on Ktor. All methods are `suspend` functions.
+`icu.raidzero:raidzero-media-kotlin` — coroutine-native Kotlin client built on Ktor. All methods are `suspend` functions.
 
 Use this SDK in Kotlin services where cancellation should follow coroutine scope.
 
@@ -12,26 +12,26 @@ Use this SDK in Kotlin services where cancellation should follow coroutine scope
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("sh.sf-voice:sf-voice-media-kotlin:0.1.1")
+    implementation("icu.raidzero:raidzero-media-kotlin:0.2.1")
 }
 ```
 
 ## Create a client
 
 ```kotlin
-import com.sfvoice.media.SfVoiceMediaClient
+import icu.raidzero.media.RaidzeroMediaClient
 
-val client = SfVoiceMediaClient(
-    apiKey = System.getenv("SF_VOICE_API_KEY"),
-    baseUrl = "https://api.sf-voice.com"
+val client = RaidzeroMediaClient(
+    apiKey = System.getenv("RAIDZERO_API_KEY"),
+    baseUrl = "https://api.raidzero.icu"
 )
 ```
 
 ## Ingest
 
 ```kotlin
-import com.sfvoice.media.IngestRequest
-import com.sfvoice.media.MediaType
+import icu.raidzero.media.IngestRequest
+import icu.raidzero.media.MediaType
 
 val resp = client.ingest(
     IngestRequest(
@@ -46,8 +46,8 @@ val taskId = resp.taskId
 ## Poll until ready
 
 ```kotlin
-import com.sfvoice.media.SfVoiceMediaException
-import com.sfvoice.media.TaskStatus
+import icu.raidzero.media.RaidzeroMediaException
+import icu.raidzero.media.TaskStatus
 
 val task = client.pollTask(taskId, intervalMs = 2_000, timeoutMs = 120_000)
 
@@ -56,13 +56,13 @@ if (task.status == TaskStatus.Failed) {
 }
 ```
 
-`pollTask` throws `SfVoiceMediaException` on API errors or timeout.
+`pollTask` throws `RaidzeroMediaException` on API errors or timeout.
 
 ## Search
 
 ```kotlin
-import com.sfvoice.media.SearchMatchType
-import com.sfvoice.media.SearchRequest
+import icu.raidzero.media.SearchMatchType
+import icu.raidzero.media.SearchRequest
 
 val resp = client.search(
     SearchRequest(
@@ -94,12 +94,12 @@ client.deleteAsset("call_001")
 ## Errors
 
 ```kotlin
-import com.sfvoice.media.SfVoiceMediaException
-import com.sfvoice.media.SearchRequest
+import icu.raidzero.media.RaidzeroMediaException
+import icu.raidzero.media.SearchRequest
 
 try {
     client.search(SearchRequest(query = "..."))
-} catch (e: SfVoiceMediaException) {
+} catch (e: RaidzeroMediaException) {
     println("${e.code} ${e.status}: ${e.message}")
 }
 ```

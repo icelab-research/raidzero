@@ -24,10 +24,10 @@ The first time you sign in to an org that has no tokens and no ingested media, t
     Click **Create token**. A token labeled `default` is minted and revealed in the modal.
   </Step>
   <Step title="Install the SDK">
-    Copy the `pnpm add @sf-voice/media` snippet and run it in your project.
+    Copy the `pnpm add @raidzero/media` snippet and run it in your project.
   </Step>
   <Step title="Ingest your first call">
-    Copy the starter snippet, paste your token into `SF_VOICE_TOKEN`, and run it.
+    Copy the starter snippet, paste your token into `RAIDZERO_TOKEN`, and run it.
   </Step>
 </Steps>
 
@@ -62,19 +62,19 @@ Tokens with a past expiration date are marked **Expired** and stop authenticatin
 Set the token as an environment variable and pass it to the SDK client. Never commit tokens to source control.
 
 ```ts
-import { SfVoiceMedia } from "@sf-voice/media";
+import { RaidzeroMedia } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
 });
 ```
 
 If you call the REST API directly, send the token in the `X-API-Key` header:
 
 ```sh
-curl https://api.sf-voice.com/api/v1/assets \
-  -H "X-API-Key: $SF_VOICE_API_KEY"
+curl https://api.raidzero.icu/api/v1/assets \
+  -H "X-API-Key: $RAIDZERO_API_KEY"
 ```
 
 An invalid or revoked token returns the `unauthorized` error code. See the [SDK overview](/sdks/overview) for the full error table.

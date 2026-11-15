@@ -3,8 +3,8 @@ plugins {
     id 'maven-publish'
 }
 
-group = 'sh.sf-voice'
-version = '0.1.1'
+group = 'icu.raidzero'
+version = '0.2.1'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -24,12 +24,12 @@ dependencies {
 publishing {
     publications {
         maven(MavenPublication) {
-            artifactId = 'sf-voice-media-java'
+            artifactId = 'raidzero-media-java'
             from components.java
 
             pom {
-                name = 'sf-voice-media-java'
-                description = 'Java SDK for the sf-voice media API'
+                name = 'raidzero-media-java'
+                description = 'Java SDK for the raidzero media API'
                 url = 'https://github.com/icelab-research/icelab'
                 licenses {
                     license {
@@ -39,8 +39,8 @@ publishing {
                 }
                 developers {
                     developer {
-                        id = 'sf-voice'
-                        name = 'sf-voice'
+                        id = 'raidzero'
+                        name = 'raidzero'
                     }
                 }
                 scm {

@@ -1,4 +1,4 @@
-package sfvoice
+package raidzero
 
 import "fmt"
 
@@ -13,7 +13,7 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("sfvoice: %s (HTTP %d): %s", e.Code, e.Status, e.Message)
+	return fmt.Sprintf("raidzero: %s (HTTP %d): %s", e.Code, e.Status, e.Message)
 }
 
 // PollTimeoutError is returned by PollTask when the timeout elapses.
@@ -23,5 +23,5 @@ type PollTimeoutError struct {
 }
 
 func (e *PollTimeoutError) Error() string {
-	return fmt.Sprintf("sfvoice: task %s did not complete within %dms", e.TaskID, e.TimeoutMs)
+	return fmt.Sprintf("raidzero: task %s did not complete within %dms", e.TaskID, e.TimeoutMs)
 }

@@ -1,6 +1,6 @@
-# sf-voice C++ example
+# raidzero C++ example
 
-Single-header C++17 helper for calling the sf-voice media API. Not a published
+Single-header C++17 helper for calling the raidzero media API. Not a published
 package — copy it into your project or pull it in via CMake FetchContent.
 
 Depends on `nlohmann_json` and `cpr`.
@@ -10,23 +10,23 @@ Depends on `nlohmann_json` and `cpr`.
 ```cmake
 include(FetchContent)
 FetchContent_Declare(
-  sf_voice
+  raidzero
   GIT_REPOSITORY https://github.com/icelab-research/icelab
   GIT_TAG        main
   SOURCE_SUBDIR  cpp
 )
-FetchContent_MakeAvailable(sf_voice)
+FetchContent_MakeAvailable(raidzero)
 
-target_link_libraries(your_target PRIVATE sf_voice::sf_voice)
+target_link_libraries(your_target PRIVATE raidzero::raidzero)
 ```
 
-Or copy `include/sf_voice/` directly into your project and link against CPR and
+Or copy `include/raidzero/` directly into your project and link against CPR and
 nlohmann/json yourself.
 
 ## Local build
 
 ```sh
-cmake -S . -B build -DSF_VOICE_FETCH_DEPS=ON -DSF_VOICE_INSTALL=OFF
+cmake -S . -B build -DRAIDZERO_FETCH_DEPS=ON -DRAIDZERO_INSTALL=OFF
 cmake --build build
 ```
 
@@ -35,12 +35,12 @@ cmake --build build
 ```cpp
 #include <cstdlib>
 #include <iostream>
-#include <sf_voice/sf_voice.hpp>
+#include <raidzero/raidzero.hpp>
 
 int main() {
-    sf_voice::SfVoiceMedia client(std::getenv("SF_VOICE_API_KEY"));
+    raidzero::RaidzeroMedia client(std::getenv("RAIDZERO_API_KEY"));
 
-    sf_voice::IngestRequest req;
+    raidzero::IngestRequest req;
     req.url = "https://example.com/call.mp3";
     req.media_kind = "audio";
 
@@ -53,7 +53,7 @@ int main() {
     auto task = client.poll_task(ingest.value.task_id).get();
     if (!task.ok) { return 1; }
 
-    sf_voice::SearchRequest search_req;
+    raidzero::SearchRequest search_req;
     search_req.query = "customer asks about pricing";
 
     auto search = client.search(search_req).get();

@@ -24,10 +24,10 @@ API 令牌用于对发往 `/api/v1/*` 的每个请求进行身份验证 —— �
     点击**创建令牌**。系统会签发一个标签为 `default` 的令牌,并在对话框中展示出来。
   </Step>
   <Step title="安装 SDK">
-    复制 `pnpm add @sf-voice/media` 命令,在你的项目里执行。
+    复制 `pnpm add @raidzero/media` 命令,在你的项目里执行。
   </Step>
   <Step title="摄取你的第一个录音">
-    复制初始代码片段,把令牌粘贴到 `SF_VOICE_TOKEN`,然后运行。
+    复制初始代码片段,把令牌粘贴到 `RAIDZERO_TOKEN`,然后运行。
   </Step>
 </Steps>
 
@@ -62,19 +62,19 @@ API 令牌用于对发往 `/api/v1/*` 的每个请求进行身份验证 —— �
 把令牌设置为环境变量,然后传给 SDK 客户端。永远不要把令牌提交到代码仓库。
 
 ```ts
-import { SfVoiceMedia } from "@sf-voice/media";
+import { RaidzeroMedia } from "@raidzero/media";
 
-const client = new SfVoiceMedia({
-  baseUrl: "https://api.sf-voice.com",
-  apiKey: process.env.SF_VOICE_API_KEY!,
+const client = new RaidzeroMedia({
+  baseUrl: "https://api.raidzero.icu",
+  apiKey: process.env.RAIDZERO_API_KEY!,
 });
 ```
 
 如果你直接调用 REST API,请在 `X-API-Key` 请求头中传入令牌:
 
 ```sh
-curl https://api.sf-voice.com/api/v1/assets \
-  -H "X-API-Key: $SF_VOICE_API_KEY"
+curl https://api.raidzero.icu/api/v1/assets \
+  -H "X-API-Key: $RAIDZERO_API_KEY"
 ```
 
 无效或已撤销的令牌会返回错误码 `unauthorized`。完整错误表请参见 [SDK 概览](/sdks/overview)。

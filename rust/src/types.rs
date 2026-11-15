@@ -1,4 +1,4 @@
-//! all public types that mirror the sf-voice media API's wire shapes.
+//! all public types that mirror the raidzero media API's wire shapes.
 //! serde rename_all = "snake_case" is used throughout since the API
 //! returns snake_case JSON and Rust convention is snake_case anyway,
 //! so no per-field renames are needed.
@@ -48,7 +48,7 @@ impl TaskStatus {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::types::TaskStatus;
+    /// use raidzero_media::types::TaskStatus;
     ///
     /// let ready = TaskStatus::Ready;
     /// assert!(ready.is_terminal());
@@ -234,7 +234,7 @@ impl IngestRequest {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::types::{IngestRequest, SourceType};
+    /// use raidzero_media::types::{IngestRequest, SourceType};
     ///
     /// let req = IngestRequest::from_url("https://example.com/media.mp4");
     /// assert_eq!(req.url.as_deref(), Some("https://example.com/media.mp4"));
@@ -269,7 +269,7 @@ impl IngestRequest {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::types::{IngestRequest, SourceType};
+    /// use raidzero_media::types::{IngestRequest, SourceType};
     ///
     /// let req = IngestRequest::from_s3("path/to/object.mp4");
     /// assert_eq!(req.source, SourceType::S3);
@@ -303,7 +303,7 @@ impl IngestRequest {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::types::{IngestRequest, MediaType};
+    /// use raidzero_media::types::{IngestRequest, MediaType};
     ///
     /// let req = IngestRequest::from_url("https://example.com/video.mp4").media_kind(MediaType::Video);
     /// assert_eq!(req.media_type.unwrap(), MediaType::Video);
@@ -337,7 +337,7 @@ impl IngestRequest {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::types::{IngestRequest, MediaMetadata};
+    /// use raidzero_media::types::{IngestRequest, MediaMetadata};
     ///
     /// let req = IngestRequest::from_url("https://example.com/video.mp4")
     ///     .metadata(MediaMetadata { title: Some("Example".into()), tags: None });
@@ -405,7 +405,7 @@ impl SearchRequest {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::types::SearchRequest;
+    /// use raidzero_media::types::SearchRequest;
     ///
     /// let req = SearchRequest::new("find cats");
     /// assert_eq!(req.query, "find cats");
@@ -436,7 +436,7 @@ impl SearchRequest {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::types::{SearchRequest, SearchType};
+    /// use raidzero_media::types::{SearchRequest, SearchType};
     ///
     /// let req = SearchRequest::new("query").types(vec![SearchType::Visual, SearchType::TextInVideo]);
     /// assert!(req.types.is_some());
@@ -454,7 +454,7 @@ impl SearchRequest {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::types::SearchRequest;
+    /// use raidzero_media::types::SearchRequest;
     ///
     /// let req = SearchRequest::new("find this")
     ///     .asset_ids(vec!["asset-1", "asset-2"]);
@@ -479,7 +479,7 @@ impl SearchRequest {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::types::SearchRequest;
+    /// use raidzero_media::types::SearchRequest;
     ///
     /// let req = SearchRequest::new("example query").threshold(0.75);
     /// assert_eq!(req.threshold, Some(0.75));
@@ -496,7 +496,7 @@ impl SearchRequest {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::types::SearchRequest;
+    /// use raidzero_media::types::SearchRequest;
     ///
     /// let req = SearchRequest::new("query").page(2);
     /// ```
@@ -512,7 +512,7 @@ impl SearchRequest {
     /// # Examples
     ///
     /// ```
-    /// use sf_voice_media::types::SearchRequest;
+    /// use raidzero_media::types::SearchRequest;
     ///
     /// let req = SearchRequest::new("cats").limit(25);
     /// assert_eq!(req.limit, Some(25));

@@ -1,6 +1,6 @@
-//! error types for the sf-voice-media SDK.
-//! all non-2xx API responses surface as `SfVoiceMediaError::Api`.
-//! network-level failures wrap as `SfVoiceMediaError::Http`.
+//! error types for the raidzero-media SDK.
+//! all non-2xx API responses surface as `RaidzeroMediaError::Api`.
+//! network-level failures wrap as `RaidzeroMediaError::Http`.
 
 use thiserror::Error;
 
@@ -16,9 +16,9 @@ struct ApiErrorBody {
     message: String,
 }
 
-/// every fallible SDK operation returns `Result<T, SfVoiceMediaError>`.
+/// every fallible SDK operation returns `Result<T, RaidzeroMediaError>`.
 #[derive(Debug, Error)]
-pub enum SfVoiceMediaError {
+pub enum RaidzeroMediaError {
     /// the API returned a non-2xx status with a structured error body.
     #[error("api error {status} [{code}]: {message}")]
     Api {
@@ -59,8 +59,8 @@ pub enum SfVoiceMediaError {
     },
 }
 
-impl SfVoiceMediaError {
-    /// Constructs an `SfVoiceMediaError::Api` from an HTTP status code and raw response body.
+impl RaidzeroMediaError {
+    /// Constructs an `RaidzeroMediaError::Api` from an HTTP status code and raw response body.
     ///
     /// Attempts to interpret `body` as the API's structured error envelope; if parsing fails or the
     /// body is empty/malformed, produces a generic `Api` error whose `message` is the body decoded
@@ -70,9 +70,9 @@ impl SfVoiceMediaError {
     ///
     /// ```ignore
     /// let env = br#"{"error":{"code":"bad_request","message":"invalid input"}}"#;
-    /// let err = SfVoiceMediaError::from_response(400, env);
+    /// let err = RaidzeroMediaError::from_response(400, env);
     /// match err {
-    ///     SfVoiceMediaError::Api { code, message, status } => {
+    ///     RaidzeroMediaError::Api { code, message, status } => {
     ///         assert_eq!(code, "bad_request");
     ///         assert_eq!(message, "invalid input");
     ///         assert_eq!(status, 400);
@@ -81,9 +81,9 @@ impl SfVoiceMediaError {
     /// }
     ///
     /// let plain = b"plain text error";
-    /// let err2 = SfVoiceMediaError::from_response(500, plain);
+    /// let err2 = RaidzeroMediaError::from_response(500, plain);
     /// match err2 {
-    ///     SfVoiceMediaError::Api { code, message, status } => {
+    ///     RaidzeroMediaError::Api { code, message, status } => {
     ///         assert_eq!(code, "http_error");
     ///         assert_eq!(message, "plain text error");
     ///         assert_eq!(status, 500);
